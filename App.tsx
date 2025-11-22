@@ -40,7 +40,6 @@ const App: React.FC = () => {
       setAppState(AppState.RESULTS);
 
       // Sauvegarde silencieuse des données dans Firebase pour les statistiques
-      // On passe userLocation
       saveAnalysisToFirebase(uploadedFile, result, userLocation)
         .then(() => console.log("Statistiques enregistrées."))
         .catch(err => console.error("Echec de l'enregistrement statistique", err));
@@ -64,7 +63,6 @@ const App: React.FC = () => {
     setImageDataUrl(null);
     setAnalysisResult(null);
     setErrorMessage(null);
-    // On garde la location pour la prochaine fois pour éviter de redemander
   };
 
   const renderContent = () => {
@@ -82,17 +80,16 @@ const App: React.FC = () => {
             />
           );
         }
-        // Fallback to error if data is missing
         setErrorMessage("Une erreur inattendue est survenue. Les données de résultat sont manquantes.");
         setAppState(AppState.ERROR);
         return null;
       case AppState.ERROR:
         return (
-          <div className="text-center text-red-500 bg-white p-8 rounded-xl shadow-lg border border-red-100">
+          <div className="text-center text-red-500 bg-white/80 backdrop-blur-md p-8 rounded-3xl shadow-lg border border-red-100">
             <p className="font-medium">{errorMessage}</p>
             <button
               onClick={handleReset}
-              className="mt-4 px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+              className="mt-4 px-6 py-2 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors"
             >
               Recommencer
             </button>
@@ -111,9 +108,10 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAF9F6] text-gray-800 font-sans flex flex-col items-center p-4 sm:p-6 lg:p-8">
+    // On laisse le background transparent pour voir le dégradé du body
+    <div className="text-slate-800 font-sans flex flex-col items-center p-4 sm:p-6 lg:p-8 w-full">
       <Header />
-      <main className="w-full max-w-7xl flex-grow flex flex-col items-center justify-center">
+      <main className="w-full max-w-7xl flex-grow flex flex-col items-center justify-center mt-4">
         {renderContent()}
       </main>
     </div>

@@ -48,10 +48,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onImageUpload, isLoading, onL
     setIsDragging(false);
   };
 
-  // Gestion de la géolocalisation navigateur
   const handleGeolocation = () => {
     if (!navigator.geolocation) {
-      alert("La géolocalisation n'est pas supportée par votre navigateur.");
+      alert("La géolocalisation n'est pas supportée.");
       return;
     }
     setLocationStatus('locating');
@@ -69,8 +68,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onImageUpload, isLoading, onL
     );
   };
 
-  // Validation manuelle de l'input ville/adresse
-  const handleManualLocation = () => {
+  const handleManualLocation = (e: React.FormEvent) => {
+    e.preventDefault();
     if (inputLocation.trim()) {
       onLocationSelect(inputLocation);
       setLocationStatus('found');
@@ -78,101 +77,105 @@ const LandingPage: React.FC<LandingPageProps> = ({ onImageUpload, isLoading, onL
   };
 
   return (
-    <div className="w-full max-w-3xl flex flex-col space-y-6">
+    // Container Principal Glassmorphism
+    <div className="w-full max-w-3xl text-center space-y-8 p-8 bg-white/40 backdrop-blur-lg rounded-3xl shadow-lg border border-white/20">
       
       {/* --- ÉTAPE 1 : LOCALISATION --- */}
-      <div className="bg-white border border-gray-200 shadow-sm rounded-2xl p-6">
-        <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-          Étape 1 : Localisez votre impact <span className="text-sm font-normal text-gray-500">(Optionnel)</span>
+      <div className="space-y-4">
+        <h2 className="text-xl font-semibold text-slate-700">
+          Étape 1 : Localisez votre impact <span className="text-sm font-normal text-slate-500">(Optionnel)</span>
         </h2>
         
-        <div className="flex flex-col md:flex-row gap-4 items-center">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
           <button
             onClick={handleGeolocation}
-            className={`px-4 py-2.5 rounded-lg flex items-center gap-2 transition-colors whitespace-nowrap shadow-sm font-medium ${
-              locationStatus === 'found' ? 'bg-green-600 text-white' : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+            disabled={locationStatus === 'found' || locationStatus === 'locating'}
+            className={`flex items-center justify-center gap-2 px-5 py-2.5 rounded-full transition-colors disabled:opacity-70 ${
+                locationStatus === 'found' 
+                ? 'bg-green-600 text-white' 
+                : 'bg-slate-700 text-white hover:bg-slate-800'
             }`}
           >
-            <MapPinIcon className={locationStatus === 'found' ? 'text-white' : 'text-gray-600'} />
-            {locationStatus === 'locating' ? '...' : 'Me localiser'}
+            {locationStatus === 'locating' ? (
+                <span>...</span>
+            ) : locationStatus === 'found' ? (
+                <>✓ Localisé</>
+            ) : (
+                <>Me localiser</>
+            )}
           </button>
 
-          <span className="text-gray-400 font-medium">ou</span>
+          <span className="text-slate-500">ou</span>
 
-          <div className="flex-grow flex gap-2 w-full">
+          <form onSubmit={handleManualLocation} className="flex gap-2 w-full sm:w-auto">
             <input
+              placeholder="Entrez une ville, une adresse..."
+              className="bg-white/60 border border-slate-300 rounded-full px-4 py-2 text-slate-800 focus:ring-2 focus:ring-orange-400 focus:border-orange-400 outline-none w-full sm:w-64"
               type="text"
               value={inputLocation}
               onChange={(e) => setInputLocation(e.target.value)}
-              placeholder="Entrez une ville, une adresse..."
-              className="flex-grow bg-gray-50 border border-gray-300 rounded-lg px-4 py-2 text-gray-800 placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
             />
             <button 
-              onClick={handleManualLocation}
-              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors font-medium shadow-sm"
+              type="submit" 
+              className="px-5 py-2.5 bg-orange-500 text-white rounded-full hover:bg-orange-600 transition-colors shadow-sm"
             >
               Valider
             </button>
-          </div>
+          </form>
         </div>
-        {locationStatus === 'found' && (
-          <p className="text-green-600 text-sm mt-3 flex items-center gap-1 font-medium">
-             ✓ Localisation enregistrée
-          </p>
-        )}
       </div>
 
-      {/* --- ÉTAPE 2 : TÉLÉVERSEMENT PHOTO --- */}
+      {/* --- SÉPARATEUR --- */}
+      <div className="w-1/2 mx-auto h-px bg-slate-300/70"></div>
+
+      {/* --- ÉTAPE 2 : TÉLÉVERSEMENT --- */}
       <div 
+        className={`relative rounded-2xl p-10 sm:p-12 transition-all duration-300 bg-transparent
+            ${isDragging ? 'bg-white/30 ring-4 ring-orange-200' : ''}`}
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onDragEnter={handleDragEnter}
         onDragLeave={handleDragLeave}
-        className={`relative border-2 border-dashed rounded-2xl p-10 transition-all duration-300 flex flex-col items-center justify-center text-center min-h-[300px] bg-white shadow-sm
-          ${isDragging ? 'border-indigo-400 bg-indigo-50' : 'border-gray-300 hover:border-indigo-300 hover:bg-gray-50'}`}
       >
-        <h2 className="absolute top-6 left-6 text-lg font-bold text-gray-800">
-            Étape 2 : Téléversez votre photo
-        </h2>
+        <h2 className="text-xl font-semibold text-slate-700 mb-8">Étape 2 : Téléversez votre photo</h2>
+        
+        {/* Input invisible qui couvre tout pour le drag & drop global sur la zone */}
+        <input 
+            id="file-upload-global" 
+            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" 
+            accept="image/*" 
+            type="file"
+            onChange={handleFileChange}
+        />
 
-        <div className="mt-8 flex flex-col items-center space-y-6">
-            <div className="text-gray-400">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mx-auto mb-4 text-indigo-200" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
-                <p className="text-xl font-medium text-gray-600">Glissez-déposez une photo de votre meuble ici</p>
-            </div>
+        <div className="flex flex-col items-center justify-center space-y-4 text-slate-500 relative z-20 pointer-events-none">
+            <p className="text-4xl">📤</p>
+            <p className="text-lg font-medium">Glissez-déposez une photo de votre meuble ici</p>
+            <p>ou</p>
+            
+            {/* Bouton Visuel (pointer-events-auto pour être cliquable si le drag n'est pas utilisé) */}
+            <label 
+                htmlFor="file-upload-global" 
+                className="pointer-events-auto px-6 py-3 bg-white text-orange-600 font-semibold rounded-full cursor-pointer hover:bg-orange-50 transition-colors shadow-md"
+            >
+                Cliquez pour téléverser
+            </label>
 
-            <p className="text-gray-400">ou</p>
-
-            <div className="flex flex-wrap gap-4 justify-center">
-                {/* Bouton Caméra (Mobile) */}
-                <label className="flex items-center gap-2 px-6 py-3 bg-pink-600 text-white rounded-lg cursor-pointer hover:bg-pink-700 transition-colors shadow-md hover:shadow-lg font-medium">
-                    <CameraIcon className="text-white" />
-                    <span>Prendre une photo</span>
-                    <input
-                        type="file"
-                        className="hidden"
-                        accept="image/*"
-                        capture="environment"
-                        onChange={handleFileChange}
-                        disabled={isLoading}
-                    />
-                </label>
-
-                {/* Bouton Fichier Classique */}
-                <label className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-lg cursor-pointer hover:bg-indigo-700 transition-colors shadow-md hover:shadow-lg font-medium">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
-                    <span>Choisir un fichier</span>
-                    <input
-                        type="file"
-                        className="hidden"
-                        accept="image/*"
-                        onChange={handleFileChange}
-                        disabled={isLoading}
-                    />
-                </label>
-            </div>
+            {/* Option Caméra Mobile */}
+            <label className="pointer-events-auto mt-4 sm:hidden flex items-center gap-2 px-4 py-2 bg-slate-200 text-slate-700 rounded-full cursor-pointer text-sm">
+                <CameraIcon className="h-4 w-4" />
+                <span>Prendre photo</span>
+                <input
+                    type="file"
+                    className="hidden"
+                    accept="image/*"
+                    capture="environment"
+                    onChange={handleFileChange}
+                />
+            </label>
         </div>
       </div>
+
     </div>
   );
 };
