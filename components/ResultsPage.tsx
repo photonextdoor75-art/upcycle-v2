@@ -2,8 +2,8 @@
 import React, { useRef, useState, useCallback } from 'react';
 import { toPng } from 'html-to-image';
 import { AnalysisResult } from '../types';
-import { DownloadIcon, ArrowPathIcon, SparklesIcon } from './Icons';
-import { editImage } from '../services/geminiService';
+import { DownloadIcon, ArrowPathIcon } from './Icons';
+import MethodologyModal from './MethodologyModal';
 
 interface ResultsPageProps {
   result: AnalysisResult;
@@ -15,10 +15,7 @@ interface ResultsPageProps {
 const ResultsPage: React.FC<ResultsPageProps> = ({ result, originalFile, originalImageSrc, onReset }) => {
   const { impact, furnitureType, furnitureMaterial } = result;
   const resultCardRef = useRef<HTMLDivElement>(null);
-  const [editPrompt, setEditPrompt] = useState('');
-  const [isEditing, setIsEditing] = useState(false);
-  const [editedImageUrl, setEditedImageUrl] = useState<string | null>(null);
-  const [editError, setEditError] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleDownload = useCallback(() => {
     if (resultCardRef.current === null) {
@@ -41,31 +38,12 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ result, originalFile, origina
     }, 100);
   }, []);
 
-  const handleEditImage = async () => {
-    if (!editPrompt.trim()) return;
-    setIsEditing(true);
-    setEditError(null);
-    try {
-        const reader = new FileReader();
-        reader.readAsDataURL(originalFile);
-        reader.onloadend = async () => {
-            const base64Data = (reader.result as string).split(',')[1];
-            const newImage = await editImage(base64Data, originalFile.type, editPrompt);
-            setEditedImageUrl(newImage);
-        };
-    } catch (error) {
-        console.error("Image editing failed:", error);
-        setEditError("La modification de l'image a échoué. Veuillez réessayer.");
-    } finally {
-        setIsEditing(false);
-    }
-  };
-
-  const imageToDisplay = editedImageUrl || originalImageSrc;
-
   return (
     <div className="w-full flex flex-col items-center space-y-8">
       
+      {/* --- MODALE METHODOLOGIE --- */}
+      <MethodologyModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+
       {/* --- CARD DESIGN (Comme sur la capture) --- */}
       {/* C'est cette div qui sera téléchargée en PNG */}
       <div 
@@ -75,18 +53,11 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ result, originalFile, origina
         {/* Container Image */}
         <div className="relative w-full aspect-[4/5] bg-gray-700 group">
              <img 
-                src={imageToDisplay} 
+                src={originalImageSrc} 
                 alt="Furniture" 
                 className="w-full h-full object-cover" 
              />
              
-             {/* Loading Overlay for Edit */}
-             {isEditing && (
-                 <div className="absolute inset-0 bg-black bg-opacity-60 flex items-center justify-center z-20">
-                    <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-indigo-500"></div>
-                 </div>
-             )}
-
              {/* STAMP "VALORISÉ" */}
              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10 pointer-events-none">
                 <div className="border-4 md:border-8 border-yellow-500/90 px-6 py-2 -rotate-12">
@@ -133,9 +104,18 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ result, originalFile, origina
         </div>
       </div>
 
-      {/* --- ACTIONS & EDIT (Hors de la capture PNG) --- */}
+      {/* --- ACTIONS --- */}
       <div className="w-full max-w-md space-y-4">
         
+        {/* Information Button */}
+        <button
+            onClick={() => setIsModalOpen(true)}
+            className="w-full py-2 text-sm text-indigo-400 hover:text-indigo-300 underline flex items-center justify-center gap-2 transition-colors"
+        >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            Comprendre le calcul (Sources & Détails)
+        </button>
+
         {/* Action Buttons */}
         <div className="grid grid-cols-2 gap-4">
             <button
@@ -152,28 +132,6 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ result, originalFile, origina
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg>
             <span>Partager</span>
             </button>
-        </div>
-
-        {/* Edit Section (Collapsible or subtle) */}
-        <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-4 mt-4">
-            <label className="block text-sm font-medium text-gray-400 mb-2">Envie de changer le style ?</label>
-            <div className="flex gap-2">
-                <input
-                    type="text"
-                    value={editPrompt}
-                    onChange={(e) => setEditPrompt(e.target.value)}
-                    placeholder="Ex: Peindre en bleu vintage..."
-                    className="flex-grow bg-gray-900 border border-gray-600 rounded-lg px-4 py-2 text-white text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
-                />
-                <button
-                    onClick={handleEditImage}
-                    disabled={isEditing || !editPrompt}
-                    className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 transition-colors flex items-center justify-center"
-                >
-                    <SparklesIcon />
-                </button>
-            </div>
-            {editError && <p className="text-red-400 text-xs mt-2">{editError}</p>}
         </div>
 
         <button
