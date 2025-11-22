@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from 'react';
 import { MapPinIcon, CameraIcon } from './Icons';
 
@@ -139,7 +140,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onImageUpload, isLoading, onL
       >
         <h2 className="text-xl font-semibold text-slate-700 mb-8">Étape 2 : Téléversez votre photo</h2>
         
-        {/* Input invisible qui couvre tout pour le drag & drop global sur la zone */}
+        {/* Input invisible pour le Drag & Drop global */}
         <input 
             id="file-upload-global" 
             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" 
@@ -148,31 +149,32 @@ const LandingPage: React.FC<LandingPageProps> = ({ onImageUpload, isLoading, onL
             onChange={handleFileChange}
         />
 
-        <div className="flex flex-col items-center justify-center space-y-4 text-slate-500 relative z-20 pointer-events-none">
+        <div className="flex flex-col items-center justify-center space-y-6 text-slate-500 relative z-20 pointer-events-none">
             <p className="text-4xl">📤</p>
-            <p className="text-lg font-medium">Glissez-déposez une photo de votre meuble ici</p>
-            <p>ou</p>
+            <p className="text-lg font-medium">Glissez-déposez une photo ici ou...</p>
             
-            {/* Bouton Visuel (pointer-events-auto pour être cliquable si le drag n'est pas utilisé) */}
-            <label 
-                htmlFor="file-upload-global" 
-                className="pointer-events-auto px-6 py-3 bg-white text-orange-600 font-semibold rounded-full cursor-pointer hover:bg-orange-50 transition-colors shadow-md"
-            >
-                Cliquez pour téléverser
-            </label>
+            <div className="flex flex-col sm:flex-row gap-4 pointer-events-auto">
+                {/* Bouton Importer Fichier */}
+                <label 
+                    htmlFor="file-upload-global" 
+                    className="flex items-center justify-center gap-2 px-6 py-3 bg-white text-orange-600 font-semibold rounded-full cursor-pointer hover:bg-orange-50 transition-colors shadow-md min-w-[180px]"
+                >
+                    <span>📁 Choisir un fichier</span>
+                </label>
 
-            {/* Option Caméra Mobile */}
-            <label className="pointer-events-auto mt-4 sm:hidden flex items-center gap-2 px-4 py-2 bg-slate-200 text-slate-700 rounded-full cursor-pointer text-sm">
-                <CameraIcon className="h-4 w-4" />
-                <span>Prendre photo</span>
-                <input
-                    type="file"
-                    className="hidden"
-                    accept="image/*"
-                    capture="environment"
-                    onChange={handleFileChange}
-                />
-            </label>
+                {/* Bouton Caméra (Toujours visible) */}
+                <label className="flex items-center justify-center gap-2 px-6 py-3 bg-slate-700 text-white font-semibold rounded-full cursor-pointer hover:bg-slate-800 transition-colors shadow-md min-w-[180px]">
+                    <CameraIcon className="h-5 w-5" />
+                    <span>Prendre une photo</span>
+                    <input
+                        type="file"
+                        className="hidden"
+                        accept="image/*"
+                        capture="environment"
+                        onChange={handleFileChange}
+                    />
+                </label>
+            </div>
         </div>
       </div>
 
