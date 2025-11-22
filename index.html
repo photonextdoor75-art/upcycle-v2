@@ -16,10 +16,12 @@
     "react/": "https://aistudiocdn.com/react@^19.2.0/",
     "react": "https://aistudiocdn.com/react@^19.2.0",
     "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react-dom": "https://aistudiocdn.com/react-dom@^19.2.0",
     "html-to-image": "https://aistudiocdn.com/html-to-image@^1.11.13",
     "firebase/app": "https://esm.sh/firebase@10.8.0/app",
     "firebase/firestore": "https://esm.sh/firebase@10.8.0/firestore",
     "firebase/storage": "https://esm.sh/firebase@10.8.0/storage",
+    "recharts": "https://esm.sh/recharts@2.12.0?external=react,react-dom",
     "firebase/": "https://aistudiocdn.com/firebase@^12.6.0/"
   }
 }
@@ -31,6 +33,15 @@
             fontFamily: {
               sans: ['Inter', 'sans-serif'],
             },
+            animation: {
+              'fade-in': 'fadeIn 0.5s ease-out',
+            },
+            keyframes: {
+              fadeIn: {
+                '0%': { opacity: '0', transform: 'translateY(10px)' },
+                '100%': { opacity: '1', transform: 'translateY(0)' },
+              },
+            }
           }
         }
       }

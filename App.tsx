@@ -1,8 +1,10 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { AppState, AnalysisResult } from './types';
 import LandingPage from './components/LandingPage';
 import LoadingSpinner from './components/LoadingSpinner';
 import ResultsPage from './components/ResultsPage';
+import Dashboard from './components/Dashboard';
 import Header from './components/Header';
 import { analyzeFurnitureImage } from './services/geminiService';
 import { saveAnalysisToFirebase } from './services/firebaseService';
@@ -69,6 +71,7 @@ const App: React.FC = () => {
     switch (appState) {
       case AppState.LOADING:
         return <LoadingSpinner />;
+      
       case AppState.RESULTS:
         if (analysisResult && imageDataUrl) {
           return (
@@ -83,6 +86,7 @@ const App: React.FC = () => {
         setErrorMessage("Une erreur inattendue est survenue. Les données de résultat sont manquantes.");
         setAppState(AppState.ERROR);
         return null;
+      
       case AppState.ERROR:
         return (
           <div className="text-center text-red-500 bg-white/80 backdrop-blur-md p-8 rounded-3xl shadow-lg border border-red-100">
@@ -95,6 +99,10 @@ const App: React.FC = () => {
             </button>
           </div>
         );
+
+      case AppState.DASHBOARD:
+        return <Dashboard onClose={() => setAppState(AppState.LANDING)} />;
+
       case AppState.LANDING:
       default:
         return (
@@ -110,7 +118,8 @@ const App: React.FC = () => {
   return (
     // On laisse le background transparent pour voir le dégradé du body
     <div className="text-slate-800 font-sans flex flex-col items-center p-4 sm:p-6 lg:p-8 w-full">
-      <Header />
+      {/* On passe la fonction pour ouvrir le dashboard au header */}
+      <Header onOpenDashboard={() => setAppState(AppState.DASHBOARD)} />
       <main className="w-full max-w-7xl flex-grow flex flex-col items-center justify-center mt-4">
         {renderContent()}
       </main>

@@ -1,8 +1,8 @@
 
 import { initializeApp } from 'firebase/app';
-import { getFirestore, collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { getFirestore, collection, addDoc, serverTimestamp, getDocs, query, orderBy, limit } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { AnalysisResult } from '../types';
+import { AnalysisResult, StoredAnalysis } from '../types';
 
 // Configuration du projet Firebase "upcycle-00001"
 const firebaseConfig = {
@@ -20,7 +20,6 @@ let db: any = null;
 let storage: any = null;
 
 // Initialisation sécurisée de Firebase
-// Si cela échoue (ex: bloqueur de pub, erreur réseau), l'app continuera de fonctionner sans la BDD.
 try {
   const app = initializeApp(firebaseConfig);
   db = getFirestore(app);
@@ -34,7 +33,6 @@ try {
  * Sauvegarde l'image dans Storage et les données d'analyse dans Firestore.
  */
 export async function saveAnalysisToFirebase(file: File, result: AnalysisResult, location?: string | null): Promise<void> {
-  // Si Firebase n'a pas pu s'initialiser, on arrête tout de suite sans planter
   if (!db || !storage) {
     console.warn("Firebase not initialized, skipping save.");
     return;
@@ -43,7 +41,6 @@ export async function saveAnalysisToFirebase(file: File, result: AnalysisResult,
   try {
     // 1. Upload de l'image
     const timestamp = Date.now();
-    // Nettoyage du nom de fichier pour éviter les caractères spéciaux
     const cleanFileName = file.name.replace(/[^a-zA-Z0-9.]/g, "_");
     const filename = `furniture_${timestamp}_${cleanFileName}`;
     const storageRef = ref(storage, `uploads/${filename}`);
@@ -56,16 +53,13 @@ export async function saveAnalysisToFirebase(file: File, result: AnalysisResult,
       timestamp: serverTimestamp(),
       furnitureType: result.furnitureType,
       furnitureMaterial: result.furnitureMaterial,
-      // Impact Metrics
       co2Saved: result.impact.co2Saved,
       communityCostAvoided: result.impact.communityCostAvoided,
       valueCreated: result.impact.valueCreated,
-      // Image Info
       imageUrl: downloadURL,
       originalFileName: file.name,
       imageSize: file.size,
       imageType: file.type,
-      // Location info
       location: location || "Non renseigné"
     };
 
@@ -75,6 +69,30 @@ export async function saveAnalysisToFirebase(file: File, result: AnalysisResult,
 
   } catch (error) {
     console.error("Error saving to Firebase:", error);
-    // On ne lance pas d'erreur bloquante ici pour ne pas empêcher l'utilisateur de voir ses résultats
+  }
+}
+
+/**
+ * Récupère toutes les analyses pour le tableau de bord.
+ * Note: Dans une app en prod avec des milliers d'entrées, on utiliserait des agrégations côté serveur.
+ */
+export async function fetchAllAnalyses(): Promise<StoredAnalysis[]> {
+  if (!db) return [];
+
+  try {
+    const analysesRef = collection(db, "analyses");
+    // On récupère les 100 dernières pour ne pas exploser le quota en démo
+    const q = query(analysesRef, orderBy("timestamp", "desc"), limit(100));
+    const querySnapshot = await getDocs(q);
+    
+    const analyses: StoredAnalysis[] = [];
+    querySnapshot.forEach((doc) => {
+      analyses.push({ id: doc.id, ...doc.data() } as StoredAnalysis);
+    });
+    
+    return analyses;
+  } catch (error) {
+    console.error("Error fetching analyses:", error);
+    return [];
   }
 }

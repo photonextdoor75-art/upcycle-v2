@@ -4,6 +4,7 @@ export enum AppState {
   LOADING,
   RESULTS,
   ERROR,
+  DASHBOARD // Nouvel état pour le tableau de bord
 }
 
 export interface FurnitureInfo {
@@ -21,4 +22,17 @@ export interface AnalysisResult {
   furnitureType: string;
   furnitureMaterial: string;
   impact: ImpactData;
+}
+
+// Interface pour les données récupérées de Firebase
+export interface StoredAnalysis {
+  id: string;
+  furnitureType: string;
+  furnitureMaterial: string;
+  co2Saved: number;
+  communityCostAvoided: number;
+  valueCreated: number;
+  imageUrl: string;
+  location: string;
+  timestamp: any;
 }
