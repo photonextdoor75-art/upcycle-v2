@@ -1,53 +1,62 @@
 
 import { FurnitureInfo } from '../types';
 
+// --- CONSTANTES "PIERRE DE ROSETTE" (Manifeste Le Cycle) ---
+
+// II. B. Bénéfice pour la Ville de Paris (Coût de gestion du déchet évité)
+// Source: Coût complet de la gestion des encombrants = 400 € / tonne
+export const WASTE_MANAGEMENT_COST_PER_TONNE = 400; 
+
+// II. C. Bénéfice pour le Climat (Ratio CO2 matière)
+// Source: Ratio ~3,25 kg CO2e par kg de meuble (Production + Fin de vie évitée)
+export const CO2_KG_PER_KG_FURNITURE = 3.25; 
+
+// II. A. Bénéfice pour le Citoyen (Coût de réparation moyen)
+// Source: 25,99€ (abo) + 19€ (interv) = ~45€ pour l'exemple.
+// On utilise une constante fixe pour l'instant.
+export const REPAIR_COST_ESTIMATE = 45; 
+
+// --- DONNÉES DE RÉFÉRENCE (Estimations Poids & Prix Neuf) ---
+
 export const furnitureData: { [key: string]: FurnitureInfo } = {
   'wooden chair': {
-    co2_new: 25,
-    weight_kg: 5,
-    disposal_cost_per_kg: 1,
-    new_price: 150,
+    weight_kg: 7,      // Chaise standard
+    new_price: 80,     // Prix moyen constatée
   },
   'wooden table': {
-    co2_new: 80,
-    weight_kg: 30,
-    disposal_cost_per_kg: 1,
-    new_price: 400,
-  },
-  'wooden cabinet': {
-    co2_new: 150,
-    weight_kg: 60,
-    disposal_cost_per_kg: 1,
-    new_price: 600,
-  },
-  'wooden bookshelf': {
-    co2_new: 120,
-    weight_kg: 45,
-    disposal_cost_per_kg: 1,
+    weight_kg: 35,     // Table repas
     new_price: 350,
   },
+  'wooden cabinet': {
+    weight_kg: 50,     // Armoire/Commode (proche de l'exemple de 40kg du PDF)
+    new_price: 250,    
+  },
+  'wooden bookshelf': {
+    weight_kg: 40,
+    new_price: 150,
+  },
   'metal chair': {
-    co2_new: 40,
-    weight_kg: 8,
-    disposal_cost_per_kg: 0.8,
-    new_price: 200,
+    weight_kg: 5,
+    new_price: 90,
   },
   'metal cabinet': {
-    co2_new: 200,
-    weight_kg: 70,
-    disposal_cost_per_kg: 0.8,
-    new_price: 700,
+    weight_kg: 45,
+    new_price: 300,
   },
   'plastic chair': {
-    co2_new: 15,
-    weight_kg: 3,
-    disposal_cost_per_kg: 1.2,
-    new_price: 80,
+    weight_kg: 4,
+    new_price: 40,
   },
+  'sofa': {
+    weight_kg: 60,
+    new_price: 600,
+  },
+  'armchair': {
+    weight_kg: 25,
+    new_price: 250,
+  },
+  'bed frame': {
+    weight_kg: 40,
+    new_price: 200,
+  }
 };
-
-// Conversion factor: 1 kg CO2 is roughly equivalent to 5 km driven in an average car.
-export const CO2_KM_DRIVEN_FACTOR = 5;
-
-// Average cost of materials for upcycling
-export const UPCYCLING_COSTS = 30; // in Euros

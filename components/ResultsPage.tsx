@@ -119,6 +119,18 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ result, originalFile, origina
                 <span className="text-xs text-gray-500 font-bold uppercase tracking-wider mt-1">Valeur</span>
             </div>
         </div>
+
+        {/* Sources Footer */}
+        <div className="bg-gray-900 p-4 border-t border-gray-700 text-center">
+            <p className="text-[10px] md:text-xs text-gray-500 uppercase font-semibold tracking-wider mb-2">
+                Sources & Méthodologie certifiées
+            </p>
+            <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-[9px] md:text-[10px] text-gray-500 leading-tight">
+                <span>• <strong>Climat :</strong> Rapport Quinet / Bilan GES Paris 2022</span>
+                <span>• <strong>Ville :</strong> Plan Prévention Déchets Paris</span>
+                <span>• <strong>Citoyen :</strong> Manifeste "Le Cycle"</span>
+            </div>
+        </div>
       </div>
 
       {/* --- ACTIONS & EDIT (Hors de la capture PNG) --- */}

@@ -7,16 +7,14 @@ export enum AppState {
 }
 
 export interface FurnitureInfo {
-  co2_new: number;
   weight_kg: number;
-  disposal_cost_per_kg: number;
-  new_price: number;
+  new_price: number; // Prix d'un équivalent neuf
 }
 
 export interface ImpactData {
-  co2Saved: number;
-  communityCostAvoided: number;
-  valueCreated: number;
+  co2Saved: number;          // En kg (Physique)
+  communityCostAvoided: number; // En € (Bénéfice Ville)
+  valueCreated: number;      // En € (Bénéfice Citoyen)
 }
 
 export interface AnalysisResult {

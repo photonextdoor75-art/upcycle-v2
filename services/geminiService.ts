@@ -1,24 +1,59 @@
 
 import { GoogleGenAI, Type, Modality } from '@google/genai';
 import { AnalysisResult, ImpactData } from '../types';
-import { furnitureData, CO2_KM_DRIVEN_FACTOR, UPCYCLING_COSTS } from './data';
+import { 
+  furnitureData, 
+  WASTE_MANAGEMENT_COST_PER_TONNE, 
+  CO2_KG_PER_KG_FURNITURE, 
+  REPAIR_COST_ESTIMATE 
+} from './data';
 
-// On initialise le client. Si la clé est vide, l'erreur surviendra lors de l'appel generateContent,
-// ce qui permet à l'UI de charger correctement (Header, etc.) au lieu d'avoir un écran noir.
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
 
 const furnitureTypes = Object.keys(furnitureData);
-const materials = ['wood', 'metal', 'particle board', 'plastic', 'fabric'];
+const materials = ['wood', 'metal', 'particle board', 'plastic', 'fabric', 'leather'];
 
+/**
+ * CALCULE L'IMPACT SELON LE MANIFESTE "LE CYCLE"
+ */
 function calculateImpact(type: string, material: string): ImpactData {
-  const key = `${material} ${type}`.toLowerCase();
-  const data = furnitureData[key] || furnitureData['wooden chair']; // Fallback to a default
+  // 1. Récupération des données de référence (Poids & Prix Neuf)
+  // On essaie de trouver une correspondance précise, sinon on prend une valeur par défaut
+  let key = `${material} ${type}`.toLowerCase();
+  // Si la clé exacte n'existe pas (ex: "fabric wooden chair"), on cherche juste le type (ex: "wooden chair" ou juste "chair")
+  let data = furnitureData[key];
+  
+  if (!data) {
+      // Fallback: Recherche partielle ou par défaut
+      const fallbackKey = Object.keys(furnitureData).find(k => k.includes(type)) || 'wooden chair';
+      data = furnitureData[fallbackKey];
+  }
 
-  const co2Saved = data.co2_new - 5; // Assuming a small constant CO2 cost for upcycling
-  const communityCostAvoided = data.weight_kg * data.disposal_cost_per_kg;
-  const valueCreated = data.new_price - UPCYCLING_COSTS;
+  const { weight_kg, new_price } = data;
 
-  return { co2Saved, communityCostAvoided, valueCreated };
+  // 2. APPLICATION DES FORMULES DU PDF
+
+  // A. Bénéfice pour le Climat (CO2 Physique)
+  // Formule PDF: Poids meuble (kg) * Ratio (3.25 kgCO2e/kg)
+  const co2Saved = weight_kg * CO2_KG_PER_KG_FURNITURE;
+
+  // B. Bénéfice pour la Ville de Paris (Économie Gestion Déchets)
+  // Formule PDF: Poids (tonnes) * 400 €/tonne
+  // Calcul: (weight_kg / 1000) * 400
+  const communityCostAvoided = (weight_kg / 1000) * WASTE_MANAGEMENT_COST_PER_TONNE;
+
+  // C. Bénéfice pour le Citoyen (Valeur Créée / Pouvoir d'achat)
+  // Formule PDF: Prix meuble neuf - Coût réparation
+  const valueCreated = new_price - REPAIR_COST_ESTIMATE;
+
+  // On s'assure que la valeur créée n'est pas négative (si le meuble neuf est moins cher que la réparation)
+  const finalValueCreated = Math.max(0, valueCreated);
+
+  return { 
+      co2Saved, 
+      communityCostAvoided, 
+      valueCreated: finalValueCreated 
+  };
 }
 
 export async function analyzeFurnitureImage(base64Data: string): Promise<AnalysisResult> {
@@ -35,9 +70,9 @@ export async function analyzeFurnitureImage(base64Data: string): Promise<Analysi
   };
   
   const textPart = {
-      text: `Analyze this image of a piece of furniture. Identify the main furniture type and its primary material from the provided lists.
+      text: `Analyze this image of a piece of furniture. Identify the main furniture type and its primary material.
       
-      Valid furniture types: ${furnitureTypes.join(', ')}
+      Valid furniture types (closest match): ${furnitureTypes.map(t => t.split(' ')[1] || t).join(', ')}
       Valid materials: ${materials.join(', ')}
       
       Respond ONLY with a JSON object matching the specified schema. If you cannot determine the type or material, use "unknown".`
@@ -52,8 +87,8 @@ export async function analyzeFurnitureImage(base64Data: string): Promise<Analysi
               responseSchema: {
                   type: Type.OBJECT,
                   properties: {
-                      furnitureType: { type: Type.STRING, enum: furnitureTypes, description: "The type of furniture." },
-                      furnitureMaterial: { type: Type.STRING, enum: materials, description: "The primary material of the furniture." },
+                      furnitureType: { type: Type.STRING, description: "The type of furniture (e.g. chair, table, cabinet)." },
+                      furnitureMaterial: { type: Type.STRING, enum: materials, description: "The primary material." },
                   },
                   required: ['furnitureType', 'furnitureMaterial']
               },
@@ -62,8 +97,6 @@ export async function analyzeFurnitureImage(base64Data: string): Promise<Analysi
 
       let jsonResponseText = response.text.trim();
       
-      // Extraction robuste du JSON : on cherche la première accolade ouvrante et la dernière fermante
-      // cela permet d'ignorer le texte ou le markdown (```json) qui pourrait entourer la réponse.
       const firstBrace = jsonResponseText.indexOf('{');
       const lastBrace = jsonResponseText.lastIndexOf('}');
 
