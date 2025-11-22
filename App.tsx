@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { AppState, AnalysisResult } from './types';
 import LandingPage from './components/LandingPage';
@@ -89,8 +88,8 @@ const App: React.FC = () => {
         return null;
       case AppState.ERROR:
         return (
-          <div className="text-center text-red-400">
-            <p>{errorMessage}</p>
+          <div className="text-center text-red-500 bg-white p-8 rounded-xl shadow-lg border border-red-100">
+            <p className="font-medium">{errorMessage}</p>
             <button
               onClick={handleReset}
               className="mt-4 px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
@@ -112,7 +111,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 text-gray-100 font-sans flex flex-col items-center p-4 sm:p-6 lg:p-8">
+    <div className="min-h-screen bg-[#FAF9F6] text-gray-800 font-sans flex flex-col items-center p-4 sm:p-6 lg:p-8">
       <Header />
       <main className="w-full max-w-7xl flex-grow flex flex-col items-center justify-center">
         {renderContent()}

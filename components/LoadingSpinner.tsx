@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 
 const loadingMessages = [
@@ -19,9 +18,12 @@ const LoadingSpinner: React.FC = () => {
   }, []);
 
   return (
-    <div className="flex flex-col items-center justify-center space-y-4">
-      <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-indigo-500"></div>
-      <p className="text-lg text-gray-300 transition-opacity duration-500">{loadingMessages[messageIndex]}</p>
+    <div className="flex flex-col items-center justify-center space-y-6">
+      <div className="relative">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-indigo-600 border-l-transparent border-r-transparent"></div>
+        <div className="absolute inset-0 rounded-full h-16 w-16 border-4 border-indigo-100 opacity-50 -z-10"></div>
+      </div>
+      <p className="text-lg text-gray-600 font-medium animate-pulse">{loadingMessages[messageIndex]}</p>
     </div>
   );
 };
