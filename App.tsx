@@ -14,6 +14,7 @@ const App: React.FC = () => {
   const [imageDataUrl, setImageDataUrl] = useState<string | null>(null);
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [userLocation, setUserLocation] = useState<string | null>(null);
 
   const handleImageUpload = (file: File) => {
     setUploadedFile(file);
@@ -26,6 +27,10 @@ const App: React.FC = () => {
     setErrorMessage(null);
   };
 
+  const handleLocationSelect = (location: string) => {
+    setUserLocation(location);
+  };
+
   const runAnalysis = useCallback(async () => {
     if (!imageDataUrl || !uploadedFile) return;
 
@@ -36,8 +41,8 @@ const App: React.FC = () => {
       setAppState(AppState.RESULTS);
 
       // Sauvegarde silencieuse des données dans Firebase pour les statistiques
-      // On ne 'await' pas ici pour ne pas bloquer l'affichage des résultats si la connexion est lente
-      saveAnalysisToFirebase(uploadedFile, result)
+      // On passe userLocation
+      saveAnalysisToFirebase(uploadedFile, result, userLocation)
         .then(() => console.log("Statistiques enregistrées."))
         .catch(err => console.error("Echec de l'enregistrement statistique", err));
 
@@ -46,7 +51,7 @@ const App: React.FC = () => {
       setErrorMessage("Désolé, l'analyse a échoué. Veuillez réessayer avec une autre image.");
       setAppState(AppState.ERROR);
     }
-  }, [imageDataUrl, uploadedFile]);
+  }, [imageDataUrl, uploadedFile, userLocation]);
 
   useEffect(() => {
     if (appState === AppState.LOADING) {
@@ -60,6 +65,7 @@ const App: React.FC = () => {
     setImageDataUrl(null);
     setAnalysisResult(null);
     setErrorMessage(null);
+    // On garde la location pour la prochaine fois pour éviter de redemander
   };
 
   const renderContent = () => {
@@ -95,7 +101,13 @@ const App: React.FC = () => {
         );
       case AppState.LANDING:
       default:
-        return <LandingPage onImageUpload={handleImageUpload} isLoading={false} />;
+        return (
+          <LandingPage 
+            onImageUpload={handleImageUpload} 
+            isLoading={false} 
+            onLocationSelect={handleLocationSelect}
+          />
+        );
     }
   };
 

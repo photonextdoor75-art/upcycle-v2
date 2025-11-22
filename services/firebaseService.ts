@@ -33,7 +33,7 @@ try {
 /**
  * Sauvegarde l'image dans Storage et les données d'analyse dans Firestore.
  */
-export async function saveAnalysisToFirebase(file: File, result: AnalysisResult): Promise<void> {
+export async function saveAnalysisToFirebase(file: File, result: AnalysisResult, location?: string | null): Promise<void> {
   // Si Firebase n'a pas pu s'initialiser, on arrête tout de suite sans planter
   if (!db || !storage) {
     console.warn("Firebase not initialized, skipping save.");
@@ -64,7 +64,9 @@ export async function saveAnalysisToFirebase(file: File, result: AnalysisResult)
       imageUrl: downloadURL,
       originalFileName: file.name,
       imageSize: file.size,
-      imageType: file.type
+      imageType: file.type,
+      // Location info
+      location: location || "Non renseigné"
     };
 
     // 3. Sauvegarde dans Firestore
