@@ -23,6 +23,7 @@ function calculateImpact(type: string, material: string): ImpactData {
 
 export async function analyzeFurnitureImage(base64Data: string): Promise<AnalysisResult> {
   if (!process.env.API_KEY) {
+      console.error("API Key manquante dans process.env.API_KEY");
       throw new Error("La clé API n'est pas configurée.");
   }
 
@@ -42,38 +43,53 @@ export async function analyzeFurnitureImage(base64Data: string): Promise<Analysi
       Respond ONLY with a JSON object matching the specified schema. If you cannot determine the type or material, use "unknown".`
   };
 
-  const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: { parts: [imagePart, textPart] },
-      config: {
-          responseMimeType: "application/json",
-          responseSchema: {
-              type: Type.OBJECT,
-              properties: {
-                  furnitureType: { type: Type.STRING, enum: furnitureTypes, description: "The type of furniture." },
-                  furnitureMaterial: { type: Type.STRING, enum: materials, description: "The primary material of the furniture." },
+  try {
+      const response = await ai.models.generateContent({
+          model: 'gemini-2.5-flash',
+          contents: { parts: [imagePart, textPart] },
+          config: {
+              responseMimeType: "application/json",
+              responseSchema: {
+                  type: Type.OBJECT,
+                  properties: {
+                      furnitureType: { type: Type.STRING, enum: furnitureTypes, description: "The type of furniture." },
+                      furnitureMaterial: { type: Type.STRING, enum: materials, description: "The primary material of the furniture." },
+                  },
+                  required: ['furnitureType', 'furnitureMaterial']
               },
-              required: ['furnitureType', 'furnitureMaterial']
           },
-      },
-  });
+      });
 
-  const jsonResponseText = response.text.trim();
-  const result = JSON.parse(jsonResponseText);
-  
-  const { furnitureType, furnitureMaterial } = result;
+      let jsonResponseText = response.text.trim();
+      
+      // Extraction robuste du JSON : on cherche la première accolade ouvrante et la dernière fermante
+      // cela permet d'ignorer le texte ou le markdown (```json) qui pourrait entourer la réponse.
+      const firstBrace = jsonResponseText.indexOf('{');
+      const lastBrace = jsonResponseText.lastIndexOf('}');
 
-  if (furnitureType === 'unknown' || furnitureMaterial === 'unknown') {
-    throw new Error('Could not identify furniture type or material.');
+      if (firstBrace !== -1 && lastBrace !== -1) {
+          jsonResponseText = jsonResponseText.substring(firstBrace, lastBrace + 1);
+      }
+
+      const result = JSON.parse(jsonResponseText);
+      
+      const { furnitureType, furnitureMaterial } = result;
+
+      if (furnitureType === 'unknown' || furnitureMaterial === 'unknown') {
+        throw new Error('Could not identify furniture type or material.');
+      }
+
+      const impact = calculateImpact(furnitureType, furnitureMaterial);
+
+      return {
+        furnitureType,
+        furnitureMaterial,
+        impact,
+      };
+  } catch (error) {
+      console.error("Erreur lors de l'analyse Gemini:", error);
+      throw error;
   }
-
-  const impact = calculateImpact(furnitureType, furnitureMaterial);
-
-  return {
-    furnitureType,
-    furnitureMaterial,
-    impact,
-  };
 }
 
 export async function editImage(base64Data: string, mimeType: string, prompt: string): Promise<string> {
