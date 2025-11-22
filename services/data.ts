@@ -1,7 +1,7 @@
 
 import { FurnitureInfo } from '../types';
 
-// --- CONSTANTES "PIERRE DE ROSETTE" (Manifeste Le Cycle) ---
+// --- CONSTANTES MÉTHODOLOGIQUES ---
 
 // II. B. Bénéfice pour la Ville de Paris (Coût de gestion du déchet évité)
 // Source: Coût complet de la gestion des encombrants = 400 € / tonne
@@ -11,10 +11,11 @@ export const WASTE_MANAGEMENT_COST_PER_TONNE = 400;
 // Source: Ratio ~3,25 kg CO2e par kg de meuble (Production + Fin de vie évitée)
 export const CO2_KG_PER_KG_FURNITURE = 3.25; 
 
-// II. A. Bénéfice pour le Citoyen (Coût de réparation moyen)
-// Source: 25,99€ (abo) + 19€ (interv) = ~45€ pour l'exemple.
-// On utilise une constante fixe pour l'instant.
-export const REPAIR_COST_ESTIMATE = 45; 
+// II. A. Bénéfice pour le Citoyen (Gain de pouvoir d'achat)
+// Contexte : Auto-réparation (DIY).
+// On déduit du prix neuf le coût moyen des matériaux nécessaires (peinture, quincaillerie)
+// Estimé à ~20€ pour une petite rénovation.
+export const REPAIR_COST_ESTIMATE = 20; 
 
 // --- DONNÉES DE RÉFÉRENCE (Estimations Poids & Prix Neuf) ---
 
@@ -28,7 +29,7 @@ export const furnitureData: { [key: string]: FurnitureInfo } = {
     new_price: 350,
   },
   'wooden cabinet': {
-    weight_kg: 50,     // Armoire/Commode (proche de l'exemple de 40kg du PDF)
+    weight_kg: 50,     // Armoire/Commode
     new_price: 250,    
   },
   'wooden bookshelf': {

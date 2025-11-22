@@ -1,3 +1,4 @@
+
 import React, { useRef, useState, useCallback } from 'react';
 import { toPng } from 'html-to-image';
 import { AnalysisResult } from '../types';
@@ -99,7 +100,7 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ result, originalFile, origina
             <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-[9px] md:text-[10px] text-gray-400 leading-tight">
                 <span>• <strong>Climat :</strong> Rapport Quinet / Bilan GES Paris 2022</span>
                 <span>• <strong>Ville :</strong> Plan Prévention Déchets Paris</span>
-                <span>• <strong>Citoyen :</strong> Manifeste "Le Cycle"</span>
+                <span>• <strong>Citoyen :</strong> Comparatif Achat vs Réparation DIY</span>
             </div>
         </div>
       </div>
@@ -122,7 +123,7 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ result, originalFile, origina
             onClick={handleDownload}
             className="px-4 py-3 bg-green-600 text-white font-bold rounded-xl hover:bg-green-700 transition-colors flex items-center justify-center gap-2 shadow-lg shadow-green-600/20"
             >
-            <DownloadIcon className="text-white" />
+            <DownloadIcon className="w-5 h-5 text-white" />
             <span>Télécharger</span>
             </button>
             <button
@@ -138,7 +139,7 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ result, originalFile, origina
           onClick={onReset}
           className="w-full py-3 bg-white border border-gray-300 text-gray-600 font-bold rounded-xl hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 mt-2 shadow-sm"
         >
-          <ArrowPathIcon className="text-gray-600" />
+          <ArrowPathIcon className="w-5 h-5 text-gray-600" />
           <span>Analyser un autre meuble</span>
         </button>
       </div>

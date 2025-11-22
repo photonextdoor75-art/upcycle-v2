@@ -14,7 +14,7 @@ const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
 const materials = ['Bois', 'Métal', 'Panneau de particules', 'Plastique', 'Tissu', 'Cuir', 'Verre', 'Rotin'];
 
 /**
- * CALCULE L'IMPACT SELON LE MANIFESTE "LE CYCLE"
+ * CALCULE L'IMPACT SELON LA MÉTHODOLOGIE CITOYENNE
  * @param categoryKey La clé technique (ex: 'wooden chair') pour récupérer poids/prix
  */
 function calculateImpact(categoryKey: string): ImpactData {
@@ -30,22 +30,22 @@ function calculateImpact(categoryKey: string): ImpactData {
 
   const { weight_kg, new_price } = data;
 
-  // 2. APPLICATION DES FORMULES DU PDF
+  // 2. APPLICATION DES FORMULES
 
   // A. Bénéfice pour le Climat (CO2 Physique)
-  // Formule PDF: Poids meuble (kg) * Ratio (3.25 kgCO2e/kg)
+  // Formule: Poids meuble (kg) * Ratio (3.25 kgCO2e/kg)
   const co2Saved = weight_kg * CO2_KG_PER_KG_FURNITURE;
 
   // B. Bénéfice pour la Ville de Paris (Économie Gestion Déchets)
-  // Formule PDF: Poids (tonnes) * 400 €/tonne
+  // Formule: Poids (tonnes) * 400 €/tonne
   // Calcul: (weight_kg / 1000) * 400
   const communityCostAvoided = (weight_kg / 1000) * WASTE_MANAGEMENT_COST_PER_TONNE;
 
   // C. Bénéfice pour le Citoyen (Valeur Créée / Pouvoir d'achat)
-  // Formule PDF: Prix meuble neuf - Coût réparation
+  // Formule: Prix meuble neuf - Coût matériaux DIY (~20€)
   const valueCreated = new_price - REPAIR_COST_ESTIMATE;
 
-  // On s'assure que la valeur créée n'est pas négative (si le meuble neuf est moins cher que la réparation)
+  // On s'assure que la valeur créée n'est pas négative
   const finalValueCreated = Math.max(0, valueCreated);
 
   return { 

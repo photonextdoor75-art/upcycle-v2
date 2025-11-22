@@ -1,3 +1,4 @@
+
 import React from 'react';
 
 interface MethodologyModalProps {
@@ -30,7 +31,7 @@ const MethodologyModal: React.FC<MethodologyModalProps> = ({ isOpen, onClose }) 
           
           <div className="bg-blue-50 p-5 rounded-xl border border-blue-100">
             <p className="text-sm italic text-blue-800 leading-relaxed">
-              "Ce calcul est basé sur le <strong>Manifeste Opérationnel du Projet 'Le Cycle'</strong>. Il détaille l'origine de chaque chiffre, la logique de chaque calcul et les sources qui fondent notre stratégie."
+              "Cette analyse vise à quantifier l'impact positif de l'acte de réparer plutôt que de jeter. Les calculs comparent systématiquement l'option de l'upcycling (seconde vie) à celle du remplacement par du neuf."
             </p>
           </div>
 
@@ -92,13 +93,13 @@ const MethodologyModal: React.FC<MethodologyModalProps> = ({ isOpen, onClose }) 
             </h3>
             <div className="pl-4 border-l-4 border-blue-100 space-y-3">
               <p className="text-gray-800 font-mono text-sm bg-gray-100 p-2 rounded-md inline-block border border-gray-200">
-                Formule : Prix Neuf Équivalent - Coût Réparation (~45€)
+                Formule : Prix Neuf Équivalent - Coût Matériaux (~20€)
               </p>
               <p className="text-sm">
-                <strong>Le Calcul :</strong> La différence entre le coût d'abandon (racheter neuf) et le coût de notre solution de surcyclage (abonnement + intervention).
+                <strong>Le Calcul :</strong> La différence entre le coût d'abandon (racheter un meuble neuf équivalent) et le coût estimé des matériaux nécessaires pour le rénover soi-même (peinture, quincaillerie, produits d'entretien).
               </p>
               <p className="text-sm">
-                <strong>La Source :</strong> Comparaison prix public grande distribution vs modèle économique "Le Cycle".
+                <strong>La Source :</strong> Comparaison des prix publics grande distribution vs coût moyen d'un kit de rénovation DIY.
               </p>
             </div>
           </section>
