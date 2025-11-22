@@ -1,6 +1,6 @@
 {
   "name": "The Upcycle Impact Visualizer",
-  "description": "An application that analyzes uploaded furniture photos, calculates the positive environmental and economic benefits of upcycling, and allows users to edit the image using AI.",
+  "description": "Une application qui analyse les photos de meubles, calcule les bénéfices environnementaux et économiques positifs du surcyclage, et permet aux utilisateurs de modifier l'image grâce à l'IA.",
   "requestFramePermissions": [
     "camera",
     "microphone",

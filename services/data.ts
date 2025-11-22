@@ -60,3 +60,6 @@ export const furnitureData: { [key: string]: FurnitureInfo } = {
     new_price: 200,
   }
 };
+
+// Liste des clés valides pour aider l'IA à choisir la bonne catégorie de calcul
+export const VALID_FURNITURE_KEYS = Object.keys(furnitureData);

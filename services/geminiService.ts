@@ -3,6 +3,7 @@ import { GoogleGenAI, Type, Modality } from '@google/genai';
 import { AnalysisResult, ImpactData } from '../types';
 import { 
   furnitureData, 
+  VALID_FURNITURE_KEYS,
   WASTE_MANAGEMENT_COST_PER_TONNE, 
   CO2_KG_PER_KG_FURNITURE, 
   REPAIR_COST_ESTIMATE 
@@ -10,23 +11,21 @@ import {
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
 
-const furnitureTypes = Object.keys(furnitureData);
-const materials = ['wood', 'metal', 'particle board', 'plastic', 'fabric', 'leather'];
+const materials = ['Bois', 'Métal', 'Panneau de particules', 'Plastique', 'Tissu', 'Cuir', 'Verre', 'Rotin'];
 
 /**
  * CALCULE L'IMPACT SELON LE MANIFESTE "LE CYCLE"
+ * @param categoryKey La clé technique (ex: 'wooden chair') pour récupérer poids/prix
  */
-function calculateImpact(type: string, material: string): ImpactData {
-  // 1. Récupération des données de référence (Poids & Prix Neuf)
+function calculateImpact(categoryKey: string): ImpactData {
+  // Récupération des données de référence (Poids & Prix Neuf)
   // On essaie de trouver une correspondance précise, sinon on prend une valeur par défaut
-  let key = `${material} ${type}`.toLowerCase();
-  // Si la clé exacte n'existe pas (ex: "fabric wooden chair"), on cherche juste le type (ex: "wooden chair" ou juste "chair")
-  let data = furnitureData[key];
+  let data = furnitureData[categoryKey];
   
   if (!data) {
-      // Fallback: Recherche partielle ou par défaut
-      const fallbackKey = Object.keys(furnitureData).find(k => k.includes(type)) || 'wooden chair';
-      data = furnitureData[fallbackKey];
+      // Fallback: Si l'IA invente une clé, on se rabat sur une chaise en bois par sécurité
+      console.warn(`Clé de catégorie inconnue: ${categoryKey}, utilisation du fallback.`);
+      data = furnitureData['wooden chair'];
   }
 
   const { weight_kg, new_price } = data;
@@ -69,13 +68,15 @@ export async function analyzeFurnitureImage(base64Data: string): Promise<Analysi
     },
   };
   
+  // PROMPT EN FRANÇAIS
   const textPart = {
-      text: `Analyze this image of a piece of furniture. Identify the main furniture type and its primary material.
+      text: `Tu es un expert ébéniste et brocanteur français. Analyse cette image de meuble.
       
-      Valid furniture types (closest match): ${furnitureTypes.map(t => t.split(' ')[1] || t).join(', ')}
-      Valid materials: ${materials.join(', ')}
+      1. Identifie le "nom d'affichage" précis en FRANÇAIS (ex: "Commode Louis XV", "Fauteuil Crapaud", "Chaise Windsor", "Table de ferme"). Sois précis et flatteur.
+      2. Identifie le matériau principal en FRANÇAIS (ex: "Chêne massif", "Pin", "Métal industriel").
+      3. Pour les calculs écologiques, associe ce meuble à la catégorie technique la plus proche parmi cette liste stricte : ${VALID_FURNITURE_KEYS.join(', ')}.
       
-      Respond ONLY with a JSON object matching the specified schema. If you cannot determine the type or material, use "unknown".`
+      Réponds UNIQUEMENT avec un objet JSON respectant le schéma.`
   };
 
   try {
@@ -87,36 +88,38 @@ export async function analyzeFurnitureImage(base64Data: string): Promise<Analysi
               responseSchema: {
                   type: Type.OBJECT,
                   properties: {
-                      furnitureType: { type: Type.STRING, description: "The type of furniture (e.g. chair, table, cabinet)." },
-                      furnitureMaterial: { type: Type.STRING, enum: materials, description: "The primary material." },
+                      furnitureDisplayNameFR: { type: Type.STRING, description: "Le nom précis et valorisant du meuble en Français." },
+                      furnitureMaterialFR: { type: Type.STRING, description: "Le matériau principal en Français." },
+                      calculationCategoryKey: { type: Type.STRING, enum: VALID_FURNITURE_KEYS, description: "La catégorie technique pour le calcul du poids." },
                   },
-                  required: ['furnitureType', 'furnitureMaterial']
+                  required: ['furnitureDisplayNameFR', 'furnitureMaterialFR', 'calculationCategoryKey']
               },
           },
       });
 
       let jsonResponseText = response.text.trim();
       
+      // Nettoyage basique si l'IA ajoute du markdown ```json ... ```
       const firstBrace = jsonResponseText.indexOf('{');
       const lastBrace = jsonResponseText.lastIndexOf('}');
-
       if (firstBrace !== -1 && lastBrace !== -1) {
           jsonResponseText = jsonResponseText.substring(firstBrace, lastBrace + 1);
       }
 
       const result = JSON.parse(jsonResponseText);
       
-      const { furnitureType, furnitureMaterial } = result;
+      const { furnitureDisplayNameFR, furnitureMaterialFR, calculationCategoryKey } = result;
 
-      if (furnitureType === 'unknown' || furnitureMaterial === 'unknown') {
-        throw new Error('Could not identify furniture type or material.');
+      if (!furnitureDisplayNameFR || !calculationCategoryKey) {
+        throw new Error('Impossible d\'identifier le type de meuble.');
       }
 
-      const impact = calculateImpact(furnitureType, furnitureMaterial);
+      // On utilise la clé technique (anglais) pour les maths, mais on renvoie le nom français pour l'affichage
+      const impact = calculateImpact(calculationCategoryKey);
 
       return {
-        furnitureType,
-        furnitureMaterial,
+        furnitureType: furnitureDisplayNameFR,    // Affiche "Commode Louis XV"
+        furnitureMaterial: furnitureMaterialFR,   // Affiche "Chêne massif"
         impact,
       };
   } catch (error) {
@@ -152,5 +155,5 @@ export async function editImage(base64Data: string, mimeType: string, prompt: st
         }
     }
 
-    throw new Error('No image was generated by the API.');
+    throw new Error("Aucune image n'a été générée par l'API.");
 }
