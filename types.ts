@@ -4,7 +4,8 @@ export enum AppState {
   LOADING,
   RESULTS,
   ERROR,
-  DASHBOARD // Nouvel état pour le tableau de bord
+  DASHBOARD,
+  TEST_MAP // Nouvel état pour tester la carte isolément
 }
 
 export interface FurnitureInfo {

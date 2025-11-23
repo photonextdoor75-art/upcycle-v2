@@ -6,6 +6,7 @@ import LoadingSpinner from './components/LoadingSpinner';
 import ResultsPage from './components/ResultsPage';
 import Dashboard from './components/Dashboard';
 import Header from './components/Header';
+import ParisMap from './components/ParisMap';
 import { analyzeFurnitureImage } from './services/geminiService';
 import { saveAnalysisToFirebase } from './services/firebaseService';
 
@@ -102,6 +103,22 @@ const App: React.FC = () => {
 
       case AppState.DASHBOARD:
         return <Dashboard onClose={() => setAppState(AppState.LANDING)} />;
+      
+      case AppState.TEST_MAP:
+        return (
+            <div className="w-full max-w-4xl animate-fade-in flex flex-col gap-4">
+                <div className="flex justify-between items-center bg-white/60 backdrop-blur-md p-4 rounded-3xl shadow-sm">
+                    <h2 className="text-xl font-bold text-slate-800 px-4">Test de la Carte Vectorielle</h2>
+                    <button onClick={() => setAppState(AppState.LANDING)} className="px-4 py-2 bg-white border border-slate-200 rounded-full text-slate-600 font-medium">
+                        Fermer
+                    </button>
+                </div>
+                <ParisMap />
+                <p className="text-center text-slate-500 text-sm">
+                    Ceci est une vue de test avec des données fictives pour valider le design SVG.
+                </p>
+            </div>
+        );
 
       case AppState.LANDING:
       default:
@@ -119,7 +136,10 @@ const App: React.FC = () => {
     // On laisse le background transparent pour voir le dégradé du body
     <div className="text-slate-800 font-sans flex flex-col items-center p-4 sm:p-6 lg:p-8 w-full">
       {/* On passe la fonction pour ouvrir le dashboard au header */}
-      <Header onOpenDashboard={() => setAppState(AppState.DASHBOARD)} />
+      <Header 
+        onOpenDashboard={() => setAppState(AppState.DASHBOARD)} 
+        onOpenMapTest={() => setAppState(AppState.TEST_MAP)}
+      />
       <main className="w-full max-w-7xl flex-grow flex flex-col items-center justify-center mt-4">
         {renderContent()}
       </main>

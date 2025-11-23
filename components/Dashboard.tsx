@@ -3,8 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { fetchAllAnalyses } from '../services/firebaseService';
 import { StoredAnalysis } from '../types';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { ArrowPathIcon, LeafIcon, PiggyBankIcon, MapPinIcon } from './Icons';
-import ParisMap from './ParisMap';
+import { ArrowPathIcon, LeafIcon, PiggyBankIcon } from './Icons';
 
 interface DashboardProps {
   onClose: () => void;
@@ -29,21 +28,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onClose }) => {
   const totalCo2 = data.reduce((acc, curr) => acc + (curr.co2Saved || 0), 0);
   const totalMoneySaved = data.reduce((acc, curr) => acc + (curr.communityCostAvoided || 0) + (curr.valueCreated || 0), 0);
   const totalFurniture = data.length;
-
-  // --- DONNÉES GÉOGRAPHIQUES (PARIS) ---
-  // On essaie d'extraire les codes postaux (75001 -> 75020) des localisations
-  const parisData: { [zip: string]: number } = {};
-  
-  data.forEach(item => {
-    if (item.location) {
-        // Regex simple pour trouver un code postal parisien dans la string de location
-        const match = item.location.match(/750(\d{2})/);
-        if (match) {
-            const zip = match[0]; // ex: 75011
-            parisData[zip] = (parisData[zip] || 0) + 1;
-        }
-    }
-  });
 
   // Préparation données graphiques : Top 5 Types de meubles
   const typeCount: { [key: string]: number } = {};
@@ -126,25 +110,12 @@ const Dashboard: React.FC<DashboardProps> = ({ onClose }) => {
         </div>
       </div>
 
-      {/* --- SECTION CARTE --- */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 h-auto lg:h-[500px]">
-        {/* Carte de Paris (Prend 2/3 de la largeur) */}
-        <div className="lg:col-span-2 bg-white p-6 rounded-3xl shadow-lg border border-slate-100 flex flex-col">
-            <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-slate-700 flex items-center gap-2">
-                    <MapPinIcon className="w-5 h-5 text-orange-500" />
-                    Cartographie de l'Impact Parisien
-                </h3>
-                <span className="text-xs text-slate-400 bg-slate-100 px-2 py-1 rounded-full">Données temps réel</span>
-            </div>
-            <div className="flex-grow bg-slate-50 rounded-2xl overflow-hidden border border-slate-100 p-4">
-                <ParisMap data={parisData} />
-            </div>
-        </div>
-
-        {/* Chart: Distribution Types (Prend 1/3) */}
-        <div className="bg-white p-6 rounded-3xl shadow-lg border border-slate-100 flex flex-col">
-            <h3 className="text-lg font-semibold text-slate-700 mb-4">Types de meubles</h3>
+      {/* Charts Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        
+        {/* Chart 1: Distribution Types */}
+        <div className="bg-white p-6 rounded-3xl shadow-lg border border-slate-100 min-h-[350px] flex flex-col">
+            <h3 className="text-lg font-semibold text-slate-700 mb-4">Types de meubles les plus fréquents</h3>
             <div className="flex-grow">
                 <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
@@ -152,9 +123,10 @@ const Dashboard: React.FC<DashboardProps> = ({ onClose }) => {
                             data={pieData}
                             cx="50%"
                             cy="50%"
-                            innerRadius={60}
+                            labelLine={false}
+                            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                             outerRadius={80}
-                            paddingAngle={5}
+                            fill="#8884d8"
                             dataKey="value"
                         >
                             {pieData.map((entry, index) => (
@@ -162,19 +134,15 @@ const Dashboard: React.FC<DashboardProps> = ({ onClose }) => {
                             ))}
                         </Pie>
                         <Tooltip />
-                        <Legend verticalAlign="bottom" height={36}/>
+                        <Legend />
                     </PieChart>
                 </ResponsiveContainer>
             </div>
         </div>
-      </div>
 
-
-      {/* Charts Row */}
-      <div className="grid grid-cols-1 gap-8">
-        {/* Chart Materials Bar */}
-        <div className="bg-white p-6 rounded-3xl shadow-lg border border-slate-100 min-h-[300px] flex flex-col">
-            <h3 className="text-lg font-semibold text-slate-700 mb-4">Top 5 Matériaux sauvés</h3>
+        {/* Chart 2: Materials Bar */}
+        <div className="bg-white p-6 rounded-3xl shadow-lg border border-slate-100 min-h-[350px] flex flex-col">
+            <h3 className="text-lg font-semibold text-slate-700 mb-4">Matériaux majoritaires</h3>
             <div className="flex-grow">
                 <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={barData} layout="vertical" margin={{ top: 5, right: 30, left: 40, bottom: 5 }}>
@@ -187,6 +155,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onClose }) => {
                 </ResponsiveContainer>
             </div>
         </div>
+
       </div>
 
       {/* Recent Activity List */}

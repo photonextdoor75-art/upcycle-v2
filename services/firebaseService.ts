@@ -1,7 +1,5 @@
-
 import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, addDoc, serverTimestamp, getDocs, query, orderBy, limit } from 'firebase/firestore';
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { AnalysisResult, StoredAnalysis } from '../types';
 
 // Configuration du projet Firebase "upcycle-00001"
@@ -15,40 +13,64 @@ const firebaseConfig = {
   measurementId: "G-6MPYD4DC91"
 };
 
-// Variables pour stocker les instances, initialisées à null
-let db: any = null;
-let storage: any = null;
+// Instance Singleton
+let dbInstance: any = null;
 
-// Initialisation sécurisée de Firebase
-try {
-  const app = initializeApp(firebaseConfig);
-  db = getFirestore(app);
-  storage = getStorage(app);
-  console.log("Firebase initialized for project:", firebaseConfig.projectId);
-} catch (error) {
-  console.warn("Firebase initialization failed. Saving disabled.", error);
+/**
+ * Récupère l'instance de la base de données.
+ * Tente de l'initialiser si ce n'est pas déjà fait.
+ */
+function getDB() {
+  if (dbInstance) return dbInstance;
+
+  try {
+    console.log("🔄 Initialisation Firebase (Lazy)...");
+    const app = initializeApp(firebaseConfig);
+    dbInstance = getFirestore(app);
+    console.log("✅ Firebase Connecté.");
+    return dbInstance;
+  } catch (error) {
+    console.error("❌ Erreur critique d'initialisation Firebase :", error);
+    return null;
+  }
+}
+
+// Tenter une première initialisation au chargement du fichier
+getDB();
+
+/**
+ * FONCTION DE TEST MANUEL
+ */
+export async function testConnection() {
+    const db = getDB();
+    if (!db) throw new Error("Impossible d'initialiser la base de données (Bloqueur de pub ? Réseau ?)");
+    
+    try {
+        const docRef = await addDoc(collection(db, "debug_test"), {
+            message: "Test de connexion réussi (Manuel)",
+            timestamp: serverTimestamp(),
+            userAgent: navigator.userAgent
+        });
+        return "Succès ! Document écrit avec l'ID : " + docRef.id;
+    } catch (e: any) {
+        console.error("Error adding document: ", e);
+        throw new Error("Erreur d'écriture : " + e.message);
+    }
 }
 
 /**
- * Sauvegarde l'image dans Storage et les données d'analyse dans Firestore.
+ * Sauvegarde uniquement les données d'analyse dans Firestore.
+ * (Aucune image n'est stockée sur le serveur)
  */
 export async function saveAnalysisToFirebase(file: File, result: AnalysisResult, location?: string | null): Promise<void> {
-  if (!db || !storage) {
-    console.warn("Firebase not initialized, skipping save.");
+  const db = getDB();
+  if (!db) {
+    console.warn("Firebase inaccessible, sauvegarde annulée.");
     return;
   }
 
   try {
-    // 1. Upload de l'image
-    const timestamp = Date.now();
-    const cleanFileName = file.name.replace(/[^a-zA-Z0-9.]/g, "_");
-    const filename = `furniture_${timestamp}_${cleanFileName}`;
-    const storageRef = ref(storage, `uploads/${filename}`);
-    
-    const snapshot = await uploadBytes(storageRef, file);
-    const downloadURL = await getDownloadURL(snapshot.ref);
-
-    // 2. Préparation des données statistiques
+    // Préparation des données statistiques
     const statsData = {
       timestamp: serverTimestamp(),
       furnitureType: result.furnitureType,
@@ -56,32 +78,29 @@ export async function saveAnalysisToFirebase(file: File, result: AnalysisResult,
       co2Saved: result.impact.co2Saved,
       communityCostAvoided: result.impact.communityCostAvoided,
       valueCreated: result.impact.valueCreated,
-      imageUrl: downloadURL,
+      imageUrl: "", 
       originalFileName: file.name,
-      imageSize: file.size,
-      imageType: file.type,
       location: location || "Non renseigné"
     };
 
-    // 3. Sauvegarde dans Firestore
+    // Sauvegarde dans Firestore
     await addDoc(collection(db, "analyses"), statsData);
-    console.log("Analysis data saved to Firebase successfully!");
+    console.log("✅ Données statistiques sauvegardées.");
 
   } catch (error) {
-    console.error("Error saving to Firebase:", error);
+    console.error("❌ Erreur sauvegarde Firebase:", error);
   }
 }
 
 /**
  * Récupère toutes les analyses pour le tableau de bord.
- * Note: Dans une app en prod avec des milliers d'entrées, on utiliserait des agrégations côté serveur.
  */
 export async function fetchAllAnalyses(): Promise<StoredAnalysis[]> {
+  const db = getDB();
   if (!db) return [];
 
   try {
     const analysesRef = collection(db, "analyses");
-    // On récupère les 100 dernières pour ne pas exploser le quota en démo
     const q = query(analysesRef, orderBy("timestamp", "desc"), limit(100));
     const querySnapshot = await getDocs(q);
     
@@ -92,7 +111,7 @@ export async function fetchAllAnalyses(): Promise<StoredAnalysis[]> {
     
     return analyses;
   } catch (error) {
-    console.error("Error fetching analyses:", error);
+    console.error("Erreur récupération analyses:", error);
     return [];
   }
 }

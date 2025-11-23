@@ -1,16 +1,45 @@
 
 import React from 'react';
-import { UsersIcon } from './Icons';
+import { UsersIcon, MapPinIcon } from './Icons';
+import { testConnection } from '../services/firebaseService';
 
 interface HeaderProps {
   onOpenDashboard?: () => void;
+  onOpenMapTest?: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ onOpenDashboard }) => {
+const Header: React.FC<HeaderProps> = ({ onOpenDashboard, onOpenMapTest }) => {
+  
+  const handleTestDB = async () => {
+    try {
+        const res = await testConnection();
+        alert(res);
+    } catch (e: any) {
+        alert("Erreur : " + e.message);
+    }
+  };
+
   return (
     <header className="w-full max-w-7xl my-8 flex flex-col relative">
-      {/* Bouton Dashboard en haut à droite (position absolue pour ne pas gêner le logo) */}
-      <div className="absolute top-0 right-0 z-20">
+      {/* Boutons d'action en haut à droite */}
+      <div className="absolute top-0 right-0 z-20 flex gap-2">
+        <button 
+            onClick={handleTestDB}
+            className="flex items-center gap-2 px-3 py-2 bg-red-100 hover:bg-red-200 text-red-700 text-xs font-medium rounded-full backdrop-blur-sm shadow-sm transition-all"
+            title="Forcer une écriture de test"
+        >
+            <span>⚡ Test DB</span>
+        </button>
+
+        <button 
+            onClick={onOpenMapTest}
+            className="flex items-center gap-2 px-4 py-2 bg-white/50 hover:bg-white text-slate-600 text-sm font-medium rounded-full backdrop-blur-sm shadow-sm transition-all"
+            title="Tester la carte vectorielle"
+        >
+            <MapPinIcon className="w-4 h-4" />
+            <span className="hidden sm:inline">Carte Paris</span>
+        </button>
+
         <button 
             onClick={onOpenDashboard}
             className="flex items-center gap-2 px-4 py-2 bg-white/50 hover:bg-white text-slate-600 text-sm font-medium rounded-full backdrop-blur-sm shadow-sm transition-all"
