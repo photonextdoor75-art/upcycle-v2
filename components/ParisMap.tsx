@@ -2,99 +2,134 @@
 import React, { useState } from 'react';
 
 interface ParisMapProps {
-  data?: { [key: string]: number }; // Format attendu : { '75001': 5, '75011': 12 ... }
+  data?: { [key: string]: number }; // Format: { '75001': 10, ... }
 }
 
-// Données de démonstration si aucune donnée n'est fournie
-const DEMO_DATA: { [key: string]: number } = {
-  '75001': 2, '75002': 5, '75003': 8, '75004': 3, '75005': 12,
-  '75006': 7, '75007': 4, '75008': 6, '75009': 15, '75010': 22,
-  '75011': 45, '75012': 18, '75013': 20, '75014': 14, '75015': 25,
-  '75016': 9, '75017': 30, '75018': 40, '75019': 35, '75020': 28
-};
-
-// Chemins SVG simplifiés des arrondissements
-const ARRONDISSEMENTS = [
-  { cp: '75001', name: '1er', path: 'M425 335 L455 330 L470 350 L440 365 Z' },
-  { cp: '75002', name: '2e', path: 'M425 335 L440 315 L465 310 L475 325 L455 330 Z' },
-  { cp: '75003', name: '3e', path: 'M475 325 L495 315 L510 340 L485 355 L470 350 Z' },
-  { cp: '75004', name: '4e', path: 'M470 350 L485 355 L515 380 L480 390 L455 370 Z' },
-  { cp: '75005', name: '5e', path: 'M440 385 L480 390 L490 425 L450 435 L430 400 Z' },
-  { cp: '75006', name: '6e', path: 'M400 375 L440 365 L440 385 L430 400 L410 415 Z' },
-  { cp: '75007', name: '7e', path: 'M350 355 L400 345 L410 415 L360 400 Z' },
-  { cp: '75008', name: '8e', path: 'M340 300 L390 290 L415 320 L350 355 L320 325 Z' },
-  { cp: '75009', name: '9e', path: 'M415 320 L430 290 L460 295 L465 310 L440 315 Z' },
-  { cp: '75010', name: '10e', path: 'M460 295 L490 270 L540 285 L510 340 L495 315 Z' },
-  { cp: '75011', name: '11e', path: 'M510 340 L550 320 L580 380 L515 380 Z' },
-  { cp: '75012', name: '12e', path: 'M515 380 L580 380 L640 420 L600 480 L530 450 L490 425 Z' },
-  { cp: '75013', name: '13e', path: 'M450 435 L490 425 L530 450 L500 510 L440 500 Z' },
-  { cp: '75014', name: '14e', path: 'M410 415 L450 435 L440 500 L380 480 Z' },
-  { cp: '75015', name: '15e', path: 'M300 380 L360 370 L360 400 L410 415 L380 480 L320 470 Z' },
-  { cp: '75016', name: '16e', path: 'M250 320 L320 300 L340 300 L320 325 L350 355 L360 370 L300 380 L270 430 Z' },
-  { cp: '75017', name: '17e', path: 'M320 240 L380 230 L410 260 L430 290 L415 320 L390 290 L340 300 L320 300 Z' },
-  { cp: '75018', name: '18e', path: 'M410 260 L450 220 L510 230 L490 270 L460 295 L430 290 Z' },
-  { cp: '75019', name: '19e', path: 'M490 270 L530 220 L580 250 L540 285 Z' },
-  { cp: '75020', name: '20e', path: 'M540 285 L580 250 L600 320 L550 320 L510 340 Z' }
+// Données extraites du SVG Illustrator fourni
+const PARIS_DISTRICTS = [
+  { cp: '75001', labelX: 461, labelY: 261, points: "505.115,313.364 454.536,278.482 402.386,253.716 423.932,211.272 433.044,209.167 532.284,251.963 529.003,261.104" },
+  { cp: '75002', labelX: 511, labelY: 233, points: "532.284,251.963 433.044,209.167 519.229,204.135 546.394,213.024" },
+  { cp: '75003', labelX: 559, labelY: 256, points: "608.182,301.896 529.003,261.104 532.284,251.963 546.394,213.024 588.487,225.119" },
+  { cp: '75004', labelX: 553, labelY: 316, points: "590.491,364.725 505.115,313.364 529.003,261.104 608.182,301.896 610.787,318.398" },
+  { cp: '75005', labelX: 518, labelY: 380, points: "597.564,372.988 535.419,426.001 494.253,416.36 470.689,407.22 505.115,313.364 590.491,364.725" },
+  { cp: '75006', labelX: 450, labelY: 354, points: "470.689,407.22 419.146,382.103 384.464,360.843 439.231,320.953 454.536,278.482 505.115,313.364" },
+  { cp: '75007', labelX: 361, labelY: 302, points: "384.464,360.843 344.319,354.658 268.465,286.245 319.326,251.087 402.386,253.716 454.536,278.482 439.231,320.953" },
+  { cp: '75008', labelX: 358, labelY: 202, points: "402.386,253.716 319.326,251.087 291.628,182.9 320.436,150.07 429.75,119.77 423.932,211.272" },
+  { cp: '75009', labelX: 466, labelY: 168, points: "423.932,211.272 429.75,119.77 526.655,118.843 519.229,204.135 433.044,209.167" },
+  { cp: '75010', labelX: 561, labelY: 173, points: "588.487,225.119 546.394,213.024 519.229,204.135 526.655,118.843 592.016,114.462 611.979,120.796 645.325,195.695" },
+  { cp: '75011', labelX: 632, labelY: 280, points: "740.636,352.104 610.787,318.398 608.182,301.896 588.487,225.119 645.325,195.695" },
+  { cp: '75012', labelX: 694, labelY: 408, points: "1009.25,547.352 903.156,546.549 873.741,514.472 830.983,509.714 758.878,475.833 701.734,499.122 597.564,372.988 590.491,364.725 610.787,318.398 740.636,352.104 813.651,361.695 803.63,423.421 816.113,440.099 844.156,387.337 863.52,394.875 951.377,373.639 1035.225,411.201 1028.729,495.265" },
+  { cp: '75013', labelX: 561, labelY: 484, points: "502.307,564.354 494.253,416.36 535.419,426.001 597.564,372.988 701.734,499.122 589.707,560.222 556.074,563.027 541.008,548.227" },
+  { cp: '75014', labelX: 419, labelY: 472, points: "502.307,564.354 450.46,556.116 373.728,521.458 318.308,502.827 419.146,382.103 470.689,407.22 494.253,416.36" },
+  { cp: '75015', labelX: 275, labelY: 400, points: "318.308,502.827 266.802,481.693 229.902,462.11 191.322,478.187 172.697,443.28 151.877,445.082 268.465,286.245 344.319,354.658 384.464,360.843 419.146,382.103" },
+  { cp: '75016', labelX: 143, labelY: 271, points: "151.877,445.082 111.966,425.851 88.185,363.723 -14.775,316.495 -8.5,277.831 17.678,214.402 77.999,165.871 119.423,179.694 139.74,141.38 225.964,151.973 291.628,182.9 319.326,251.087 268.465,286.245" },
+  { cp: '75017', labelX: 332, labelY: 102, points: "291.628,182.9 225.964,151.973 245.456,105.622 328.921,49.729 398.51,8.336 442.141,3.703 429.75,119.77 320.436,150.07" },
+  { cp: '75018', labelX: 506, labelY: 69, points: "429.75,119.77 442.141,3.703 536.71,1.324 597.114,0.774 616.266,0.498 620.528,40.039 592.016,114.462 526.655,118.843" },
+  { cp: '75019', labelX: 664, labelY: 112, points: "645.325,195.695 611.979,120.796 592.016,114.462 620.528,40.039 616.266,0.498 699.035,3.754 729.515,36.332 738.811,80.831 746.105,118.042 790.843,152.649" },
+  { cp: '75020', labelX: 736, labelY: 253, points: "813.651,361.695 740.636,352.104 645.325,195.695 790.843,152.649 802.001,187.807 810.823,305.576 815.232,344.566" },
 ];
 
-const ParisMap: React.FC<ParisMapProps> = ({ data = DEMO_DATA }) => {
+const ParisMap: React.FC<ParisMapProps> = ({ data = {} }) => {
   const [hoveredArr, setHoveredArr] = useState<string | null>(null);
-  const maxValue = Math.max(...Object.values(data), 1);
+  
+  // Si aucune donnée, max = 1 pour éviter division par zéro, sinon max des données réelles
+  const values = Object.values(data);
+  const maxValue = values.length > 0 ? Math.max(...values) : 1;
 
   const getColor = (value: number) => {
-    const intensity = Math.min(value / maxValue, 1);
-    if (value === 0) return '#F3F4F6';
-    if (intensity < 0.3) return '#FDE047';
-    if (intensity < 0.6) return '#FB923C';
-    return '#EA580C';
+    if (!value || value === 0) return '#F3F4F6'; // Gris clair si vide
+    
+    // Echelle de chaleur simple
+    const intensity = value / maxValue;
+    if (intensity < 0.3) return '#FDE047'; // Jaune (Faible)
+    if (intensity < 0.7) return '#FB923C'; // Orange (Moyen)
+    return '#EA580C'; // Rouge/Orange foncé (Fort)
   };
 
   return (
     <div className="w-full flex flex-col items-center bg-white p-6 rounded-3xl shadow-lg border border-slate-100">
       <h3 className="text-xl font-bold text-slate-700 mb-4">Densité de Collecte par Arrondissement</h3>
-      <div className="relative w-full max-w-lg aspect-[4/3]">
-        <svg viewBox="200 200 500 350" className="w-full h-full drop-shadow-md">
-           <path d="M650 400 Q500 450 400 380 Q300 320 200 350" fill="none" stroke="#BFDBFE" strokeWidth="10" strokeLinecap="round" className="opacity-50"/>
-           {ARRONDISSEMENTS.map((arr) => {
+      
+      <div className="relative w-full max-w-2xl aspect-[1.8]">
+        <svg 
+            viewBox="-20 -10 1080 600" 
+            className="w-full h-full drop-shadow-xl"
+            style={{ overflow: 'visible' }}
+        >
+           <filter id="dropShadow" height="130%">
+              <feGaussianBlur in="SourceAlpha" stdDeviation="3"/> 
+              <feOffset dx="2" dy="2" result="offsetblur"/>
+              <feComponentTransfer>
+                <feFuncA type="linear" slope="0.3"/>
+              </feComponentTransfer>
+              <feMerge> 
+                <feMergeNode/>
+                <feMergeNode in="SourceGraphic"/> 
+              </feMerge>
+            </filter>
+
+           {PARIS_DISTRICTS.map((arr) => {
              const value = data[arr.cp] || 0;
              const isHovered = hoveredArr === arr.cp;
              return (
-               <g key={arr.cp} onMouseEnter={() => setHoveredArr(arr.cp)} onMouseLeave={() => setHoveredArr(null)} className="cursor-pointer transition-all duration-200">
-                 <path d={arr.path} fill={getColor(value)} stroke="white" strokeWidth={isHovered ? 3 : 1} className={`transition-all duration-300 ${isHovered ? 'brightness-110 -translate-y-1 shadow-xl' : ''}`} style={{ transformBox: 'fill-box', transformOrigin: 'center' }}/>
-                 {value > 0 && (
-                    <text x={getCenter(arr.path).x} y={getCenter(arr.path).y} textAnchor="middle" dominantBaseline="middle" fill={value > (maxValue/2) ? "white" : "#374151"} fontSize="10" fontWeight="bold" pointerEvents="none">
-                        {arr.cp.slice(3)}
-                    </text>
-                 )}
+               <g 
+                key={arr.cp} 
+                onMouseEnter={() => setHoveredArr(arr.cp)} 
+                onMouseLeave={() => setHoveredArr(null)} 
+                className="cursor-pointer group"
+               >
+                 <polygon 
+                    points={arr.points} 
+                    fill={getColor(value)} 
+                    stroke="white" 
+                    strokeWidth={isHovered ? 3 : 1.5} 
+                    strokeLinejoin="round"
+                    className={`transition-all duration-300 ease-out ${isHovered ? 'opacity-100 -translate-y-1 brightness-110' : 'opacity-90'}`}
+                    style={{ transformBox: 'fill-box', transformOrigin: 'center', filter: isHovered ? 'url(#dropShadow)' : 'none' }}
+                 />
+                 
+                 {/* Numéro d'arrondissement */}
+                 <text 
+                    x={arr.labelX} 
+                    y={arr.labelY} 
+                    textAnchor="middle" 
+                    dominantBaseline="middle" 
+                    fill={value > 0 && value > (maxValue/2) ? "white" : "#374151"} 
+                    fontSize="24" 
+                    fontWeight="bold" 
+                    className="pointer-events-none select-none transition-all font-sans"
+                    style={{ 
+                        transform: isHovered ? 'scale(1.2) translateY(-4px)' : 'scale(1)', 
+                        transformBox: 'fill-box', 
+                        transformOrigin: 'center',
+                        textShadow: '0px 1px 2px rgba(0,0,0,0.1)'
+                    }}
+                 >
+                    {arr.cp.slice(3)}
+                 </text>
                </g>
              );
            })}
         </svg>
+
         {hoveredArr && (
-          <div className="absolute top-4 right-4 bg-slate-800 text-white text-xs px-3 py-2 rounded-lg shadow-lg z-10 animate-fade-in">
-            <p className="font-bold text-sm">{ARRONDISSEMENTS.find(a => a.cp === hoveredArr)?.name} Arrondissement</p>
-            <p className="text-orange-300">{data[hoveredArr] || 0} meubles collectés</p>
+          <div className="absolute top-4 right-4 bg-slate-800/90 backdrop-blur text-white px-4 py-2 rounded-xl shadow-xl z-20 animate-fade-in pointer-events-none border border-slate-700">
+            <p className="font-bold text-sm">{hoveredArr.slice(3)}e Arrondissement</p>
+            <div className="flex items-center gap-2 mt-1">
+                <div className={`w-2 h-2 rounded-full ${data[hoveredArr] ? 'bg-orange-400' : 'bg-gray-400'}`}></div>
+                <p className="text-slate-200 text-xs">{data[hoveredArr] || 0} meubles sauvés</p>
+            </div>
           </div>
         )}
       </div>
-      <div className="w-full flex justify-center items-center gap-2 mt-6 text-xs text-slate-500">
+
+      <div className="w-full flex justify-center items-center gap-3 mt-6 text-xs text-slate-500 font-medium">
         <span>Faible</span>
-        <div className="w-24 h-2 rounded-full bg-gradient-to-r from-yellow-300 via-orange-400 to-orange-600"></div>
+        <div className="w-32 h-2 rounded-full bg-gradient-to-r from-yellow-300 via-orange-400 to-orange-600 shadow-inner"></div>
         <span>Élevé</span>
       </div>
     </div>
   );
 };
 
-function getCenter(pathStr: string) {
-    const coords = pathStr.match(/[0-9]+/g)?.map(Number);
-    if (!coords || coords.length === 0) return { x: 0, y: 0 };
-    let sumX = 0, sumY = 0, count = 0;
-    for (let i = 0; i < coords.length; i += 2) {
-        sumX += coords[i];
-        sumY += coords[i+1];
-        count++;
-    }
-    return { x: sumX / count, y: sumY / count };
-}
 export default ParisMap;

@@ -4,6 +4,7 @@ import { fetchAllAnalyses } from '../services/firebaseService';
 import { StoredAnalysis } from '../types';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { ArrowPathIcon, LeafIcon, PiggyBankIcon } from './Icons';
+import ParisMap from './ParisMap';
 
 interface DashboardProps {
   onClose: () => void;
@@ -28,6 +29,21 @@ const Dashboard: React.FC<DashboardProps> = ({ onClose }) => {
   const totalCo2 = data.reduce((acc, curr) => acc + (curr.co2Saved || 0), 0);
   const totalMoneySaved = data.reduce((acc, curr) => acc + (curr.communityCostAvoided || 0) + (curr.valueCreated || 0), 0);
   const totalFurniture = data.length;
+
+  // --- ANALYSE GÉOGRAPHIQUE (Paris) ---
+  // On extrait le code postal 750xx de la chaîne de localisation
+  const geoData: { [key: string]: number } = {};
+  
+  data.forEach(item => {
+    if (item.location) {
+        // Regex pour trouver un code postal parisien (75001 à 75020)
+        const match = item.location.match(/750\d{2}/);
+        if (match) {
+            const cp = match[0];
+            geoData[cp] = (geoData[cp] || 0) + 1;
+        }
+    }
+  });
 
   // Préparation données graphiques : Top 5 Types de meubles
   const typeCount: { [key: string]: number } = {};
@@ -108,6 +124,14 @@ const Dashboard: React.FC<DashboardProps> = ({ onClose }) => {
                 <p className="text-3xl font-bold text-slate-800">{totalFurniture}</p>
             </div>
         </div>
+      </div>
+
+      {/* SECTION CARTE PARIS */}
+      <div className="w-full">
+        <ParisMap data={geoData} />
+        <p className="text-center text-xs text-slate-400 mt-2">
+            * La carte affiche uniquement les meubles dont l'adresse contient un code postal Parisien (75001-75020).
+        </p>
       </div>
 
       {/* Charts Row */}
