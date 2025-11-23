@@ -41,24 +41,28 @@ const App: React.FC = () => {
       const result = await analyzeFurnitureImage(base64Data);
       setAnalysisResult(result);
       setAppState(AppState.RESULTS);
-
-      // Sauvegarde silencieuse des données dans Firebase pour les statistiques
-      saveAnalysisToFirebase(uploadedFile, result, userLocation)
-        .then(() => console.log("Statistiques enregistrées."))
-        .catch(err => console.error("Echec de l'enregistrement statistique", err));
+      
+      // NOTE: On ne sauvegarde PLUS automatiquement ici. 
+      // On attend que l'utilisateur clique sur "Je sauve" ou "Je jette" dans ResultsPage.
 
     } catch (error) {
       console.error("Analysis failed:", error);
       setErrorMessage("Désolé, l'analyse a échoué. Veuillez réessayer avec une autre image.");
       setAppState(AppState.ERROR);
     }
-  }, [imageDataUrl, uploadedFile, userLocation]);
+  }, [imageDataUrl, uploadedFile]);
 
   useEffect(() => {
     if (appState === AppState.LOADING) {
       runAnalysis();
     }
   }, [appState, runAnalysis]);
+
+  const handleUserDecision = async (status: 'saved' | 'lost') => {
+    if (uploadedFile && analysisResult) {
+        await saveAnalysisToFirebase(uploadedFile, analysisResult, userLocation, status);
+    }
+  };
 
   const handleReset = () => {
     setAppState(AppState.LANDING);
@@ -81,6 +85,7 @@ const App: React.FC = () => {
               originalFile={uploadedFile!}
               originalImageSrc={imageDataUrl}
               onReset={handleReset}
+              onDecision={handleUserDecision}
             />
           );
         }
@@ -108,14 +113,17 @@ const App: React.FC = () => {
         return (
             <div className="w-full max-w-4xl animate-fade-in flex flex-col gap-4">
                 <div className="flex justify-between items-center bg-white/60 backdrop-blur-md p-4 rounded-3xl shadow-sm">
-                    <h2 className="text-xl font-bold text-slate-800 px-4">Test de la Carte Vectorielle</h2>
+                    <h2 className="text-xl font-bold text-slate-800 px-4">Carte Vectorielle (Vue Test)</h2>
                     <button onClick={() => setAppState(AppState.LANDING)} className="px-4 py-2 bg-white border border-slate-200 rounded-full text-slate-600 font-medium">
                         Fermer
                     </button>
                 </div>
-                <ParisMap />
+                {/* Carte vide par défaut pour le test, pas de fausses données */}
+                <div className="bg-white/40 backdrop-blur-sm p-8 rounded-3xl border border-white/50">
+                    <ParisMap data={{}} />
+                </div>
                 <p className="text-center text-slate-500 text-sm">
-                    Ceci est une vue de test avec des données fictives pour valider le design SVG.
+                    Aucune donnée chargée dans cette vue de test. Utilisez le menu "Statistiques" pour voir les vraies données.
                 </p>
             </div>
         );

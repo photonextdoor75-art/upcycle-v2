@@ -2,7 +2,7 @@
 import React, { useRef, useState, useCallback } from 'react';
 import { toPng } from 'html-to-image';
 import { AnalysisResult } from '../types';
-import { DownloadIcon, ArrowPathIcon } from './Icons';
+import { DownloadIcon, ArrowPathIcon, LeafIcon } from './Icons';
 import MethodologyModal from './MethodologyModal';
 
 interface ResultsPageProps {
@@ -10,21 +10,21 @@ interface ResultsPageProps {
   originalFile: File;
   originalImageSrc: string;
   onReset: () => void;
+  onDecision: (status: 'saved' | 'lost') => void;
 }
 
-const ResultsPage: React.FC<ResultsPageProps> = ({ result, originalFile, originalImageSrc, onReset }) => {
+const ResultsPage: React.FC<ResultsPageProps> = ({ result, originalFile, originalImageSrc, onReset, onDecision }) => {
   const { impact, furnitureType, furnitureMaterial } = result;
   const resultCardRef = useRef<HTMLDivElement>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [decisionMade, setDecisionMade] = useState<'none' | 'saved' | 'lost'>('none');
 
   const handleDownload = useCallback(() => {
     if (resultCardRef.current === null) {
       return;
     }
-    // On ajoute un petit délai pour s'assurer que les fonts sont chargées
     setTimeout(() => {
         if (resultCardRef.current) {
-            // On utilise un fond blanc pour l'export PNG
             toPng(resultCardRef.current, { cacheBust: true, backgroundColor: '#ffffff' }) 
             .then((dataUrl) => {
                 const link = document.createElement('a');
@@ -39,14 +39,18 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ result, originalFile, origina
     }, 100);
   }, []);
 
+  const handleDecision = (status: 'saved' | 'lost') => {
+      setDecisionMade(status);
+      onDecision(status);
+  };
+
   return (
-    <div className="w-full flex flex-col items-center space-y-8">
+    <div className="w-full flex flex-col items-center space-y-8 animate-fade-in">
       
       {/* --- MODALE METHODOLOGIE --- */}
       <MethodologyModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
 
       {/* --- CARD DESIGN (Thème Atelier) --- */}
-      {/* C'est cette div qui sera téléchargée en PNG */}
       <div 
         ref={resultCardRef} 
         className="w-full max-w-md bg-white rounded-3xl overflow-hidden shadow-2xl border border-gray-100 flex flex-col relative"
@@ -59,24 +63,26 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ result, originalFile, origina
                 className="w-full h-full object-cover" 
              />
              
-             {/* STAMP "VALORISÉ" */}
-             <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10 pointer-events-none">
-                <div className="border-4 md:border-8 border-white/90 px-6 py-2 -rotate-12 bg-yellow-500/80 backdrop-blur-sm shadow-lg">
-                    <span className="text-4xl md:text-6xl font-black text-white tracking-widest uppercase whitespace-nowrap drop-shadow-md">
-                        VALORISÉ
-                    </span>
-                </div>
-             </div>
+             {/* STAMP "VALORISÉ" (Seulement si sauvé ou pas encore décidé) */}
+             {decisionMade !== 'lost' && (
+                 <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10 pointer-events-none">
+                    <div className="border-4 md:border-8 border-white/90 px-6 py-2 -rotate-12 bg-yellow-500/80 backdrop-blur-sm shadow-lg">
+                        <span className="text-4xl md:text-6xl font-black text-white tracking-widest uppercase whitespace-nowrap drop-shadow-md">
+                            POTENTIEL
+                        </span>
+                    </div>
+                 </div>
+             )}
 
              {/* Text Overlay Bottom */}
              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent p-6 pt-20 text-center z-10">
                 <p className="text-white font-bold text-lg md:text-xl leading-snug drop-shadow-md">
-                    Votre <span className="text-green-400">{furnitureType} en {furnitureMaterial}</span> a un <br/> potentiel incroyable !
+                    Votre <span className="text-green-400">{furnitureType} en {furnitureMaterial}</span>
                 </p>
              </div>
         </div>
 
-        {/* Metrics Bar - Fond Blanc, Texte Noir */}
+        {/* Metrics Bar */}
         <div className="bg-white p-6 grid grid-cols-3 divide-x divide-gray-100">
             <div className="flex flex-col items-center justify-center px-2">
                 <span className="text-2xl md:text-3xl font-bold text-green-600">{Math.round(impact.co2Saved)} kg</span>
@@ -98,48 +104,81 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ result, originalFile, origina
                 Sources & Méthodologie certifiées
             </p>
             <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-[9px] md:text-[10px] text-gray-400 leading-tight">
-                <span>• <strong>Climat :</strong> Rapport Quinet / Bilan GES Paris 2022</span>
-                <span>• <strong>Ville :</strong> Plan Prévention Déchets Paris</span>
-                <span>• <strong>Citoyen :</strong> Comparatif Achat vs Réparation DIY</span>
+                <span>• <strong>Climat :</strong> Bilan GES Paris 2022</span>
+                <span>• <strong>Ville :</strong> Plan Déchets Paris</span>
+                <span>• <strong>Citoyen :</strong> Comparatif DIY</span>
             </div>
         </div>
       </div>
 
-      {/* --- ACTIONS --- */}
-      <div className="w-full max-w-md space-y-4">
+      {/* --- ACTIONS DE DECISION --- */}
+      <div className="w-full max-w-md bg-white/60 backdrop-blur-lg p-6 rounded-3xl shadow-lg border border-white space-y-4">
         
-        {/* Information Button */}
-        <button
-            onClick={() => setIsModalOpen(true)}
-            className="w-full py-2 text-sm text-indigo-600 hover:text-indigo-800 underline flex items-center justify-center gap-2 transition-colors font-medium"
-        >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-            Comprendre le calcul (Sources & Détails)
-        </button>
+        {decisionMade === 'none' ? (
+            <>
+                <h3 className="text-center text-lg font-bold text-slate-800">Quelle décision prenez-vous ?</h3>
+                <div className="flex gap-3">
+                    <button
+                        onClick={() => handleDecision('saved')}
+                        className="flex-1 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl shadow-lg shadow-green-200 transition-all transform hover:scale-105 flex flex-col items-center justify-center gap-1"
+                    >
+                        <span className="text-xl">🤩</span>
+                        <span>Je le sauve !</span>
+                        <span className="text-[10px] font-normal opacity-80">(Réparation, Vente, Don)</span>
+                    </button>
+                    
+                    <button
+                        onClick={() => handleDecision('lost')}
+                        className="flex-1 py-3 bg-slate-200 hover:bg-slate-300 text-slate-600 font-bold rounded-xl transition-all flex flex-col items-center justify-center gap-1"
+                    >
+                        <span className="text-xl">🗑️</span>
+                        <span>Je m'en débarrasse</span>
+                        <span className="text-[10px] font-normal opacity-70">(Encombrants, Déchèterie)</span>
+                    </button>
+                </div>
+            </>
+        ) : (
+            <div className={`text-center p-4 rounded-xl border ${decisionMade === 'saved' ? 'bg-green-50 border-green-200 text-green-800' : 'bg-orange-50 border-orange-200 text-orange-800'}`}>
+                {decisionMade === 'saved' ? (
+                    <>
+                        <p className="text-2xl mb-2">🎉</p>
+                        <p className="font-bold text-lg">Merci pour votre action !</p>
+                        <p className="text-sm mt-1">Votre impact a été enregistré dans les statistiques de votre quartier.</p>
+                    </>
+                ) : (
+                    <>
+                        <p className="text-2xl mb-2">📉</p>
+                        <p className="font-bold text-lg">Dommage...</p>
+                        <p className="text-sm mt-1">Cet objet est comptabilisé comme perte de valeur pour la communauté.</p>
+                    </>
+                )}
+            </div>
+        )}
 
-        {/* Action Buttons */}
+        <div className="w-full h-px bg-slate-200 my-4"></div>
+
+        {/* Secondary Actions */}
         <div className="grid grid-cols-2 gap-4">
             <button
-            onClick={handleDownload}
-            className="px-4 py-3 bg-green-600 text-white font-bold rounded-xl hover:bg-green-700 transition-colors flex items-center justify-center gap-2 shadow-lg shadow-green-600/20"
+                onClick={handleDownload}
+                className="px-4 py-2 bg-white text-slate-700 font-medium rounded-xl hover:bg-slate-50 transition-colors flex items-center justify-center gap-2 border border-slate-200 text-sm"
             >
-            <DownloadIcon className="w-5 h-5 text-white" />
-            <span>Télécharger</span>
+                <DownloadIcon className="w-4 h-4" />
+                <span>Télécharger</span>
             </button>
             <button
-            onClick={() => alert("Fonction de partage bientôt disponible !")}
-            className="px-4 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20"
+                onClick={() => setIsModalOpen(true)}
+                className="px-4 py-2 bg-white text-slate-700 font-medium rounded-xl hover:bg-slate-50 transition-colors flex items-center justify-center gap-2 border border-slate-200 text-sm"
             >
-            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg>
-            <span>Partager</span>
+                <span>ℹ️ Détails calcul</span>
             </button>
         </div>
 
         <button
           onClick={onReset}
-          className="w-full py-3 bg-white border border-gray-300 text-gray-600 font-bold rounded-xl hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 mt-2 shadow-sm"
+          className="w-full py-3 text-slate-500 font-medium hover:text-slate-800 transition-colors flex items-center justify-center gap-2 text-sm"
         >
-          <ArrowPathIcon className="w-5 h-5 text-gray-600" />
+          <ArrowPathIcon className="w-4 h-4" />
           <span>Analyser un autre meuble</span>
         </button>
       </div>

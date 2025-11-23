@@ -2,10 +2,11 @@
 import React, { useState } from 'react';
 
 interface ParisMapProps {
-  data?: { [key: string]: number }; // Format: { '75001': 10, ... }
+  // La donnée est un objet { saved: number, lost: number } par code postal
+  data?: { [key: string]: { saved: number, lost: number } }; 
 }
 
-// Données extraites du SVG Illustrator fourni
+// Données extraites du SVG Illustrator "Puzzle" (Tracés précis et coordonnées exactes)
 const PARIS_DISTRICTS = [
   { cp: '75001', labelX: 461, labelY: 261, points: "505.115,313.364 454.536,278.482 402.386,253.716 423.932,211.272 433.044,209.167 532.284,251.963 529.003,261.104" },
   { cp: '75002', labelX: 511, labelY: 233, points: "532.284,251.963 433.044,209.167 519.229,204.135 546.394,213.024" },
@@ -26,106 +27,93 @@ const PARIS_DISTRICTS = [
   { cp: '75017', labelX: 332, labelY: 102, points: "291.628,182.9 225.964,151.973 245.456,105.622 328.921,49.729 398.51,8.336 442.141,3.703 429.75,119.77 320.436,150.07" },
   { cp: '75018', labelX: 506, labelY: 69, points: "429.75,119.77 442.141,3.703 536.71,1.324 597.114,0.774 616.266,0.498 620.528,40.039 592.016,114.462 526.655,118.843" },
   { cp: '75019', labelX: 664, labelY: 112, points: "645.325,195.695 611.979,120.796 592.016,114.462 620.528,40.039 616.266,0.498 699.035,3.754 729.515,36.332 738.811,80.831 746.105,118.042 790.843,152.649" },
-  { cp: '75020', labelX: 736, labelY: 253, points: "813.651,361.695 740.636,352.104 645.325,195.695 790.843,152.649 802.001,187.807 810.823,305.576 815.232,344.566" },
+  { cp: '75020', labelX: 736, labelY: 253, points: "813.651,361.695 740.636,352.104 645.325,195.695 790.843,152.649 802.001,187.807 810.823,305.576 815.232,344.566" }
 ];
 
 const ParisMap: React.FC<ParisMapProps> = ({ data = {} }) => {
-  const [hoveredArr, setHoveredArr] = useState<string | null>(null);
-  
-  // Si aucune donnée, max = 1 pour éviter division par zéro, sinon max des données réelles
-  const values = Object.values(data);
-  const maxValue = values.length > 0 ? Math.max(...values) : 1;
+  const [hoveredDistrict, setHoveredDistrict] = useState<string | null>(null);
 
-  const getColor = (value: number) => {
-    if (!value || value === 0) return '#F3F4F6'; // Gris clair si vide
+  const getColor = (cp: string) => {
+    const stats = data[cp] || { saved: 0, lost: 0 };
+    const count = stats.saved;
     
-    // Echelle de chaleur simple
-    const intensity = value / maxValue;
-    if (intensity < 0.3) return '#FDE047'; // Jaune (Faible)
-    if (intensity < 0.7) return '#FB923C'; // Orange (Moyen)
-    return '#EA580C'; // Rouge/Orange foncé (Fort)
+    if (count === 0) return '#FCD34D'; // Jaune (défaut)
+    if (count < 5) return '#F97316'; // Orange clair
+    if (count < 10) return '#EA580C'; // Orange moyen
+    return '#C2410C'; // Orange foncé/Rouge
   };
 
   return (
-    <div className="w-full flex flex-col items-center bg-white p-6 rounded-3xl shadow-lg border border-slate-100">
+    <div className="w-full h-full flex flex-col items-center relative">
       <h3 className="text-xl font-bold text-slate-700 mb-4">Densité de Collecte par Arrondissement</h3>
       
-      <div className="relative w-full max-w-2xl aspect-[1.8]">
-        <svg 
-            viewBox="-20 -10 1080 600" 
-            className="w-full h-full drop-shadow-xl"
-            style={{ overflow: 'visible' }}
-        >
-           <filter id="dropShadow" height="130%">
-              <feGaussianBlur in="SourceAlpha" stdDeviation="3"/> 
-              <feOffset dx="2" dy="2" result="offsetblur"/>
-              <feComponentTransfer>
-                <feFuncA type="linear" slope="0.3"/>
-              </feComponentTransfer>
-              <feMerge> 
-                <feMergeNode/>
-                <feMergeNode in="SourceGraphic"/> 
-              </feMerge>
-            </filter>
-
-           {PARIS_DISTRICTS.map((arr) => {
-             const value = data[arr.cp] || 0;
-             const isHovered = hoveredArr === arr.cp;
-             return (
-               <g 
-                key={arr.cp} 
-                onMouseEnter={() => setHoveredArr(arr.cp)} 
-                onMouseLeave={() => setHoveredArr(null)} 
-                className="cursor-pointer group"
-               >
-                 <polygon 
-                    points={arr.points} 
-                    fill={getColor(value)} 
-                    stroke="white" 
-                    strokeWidth={isHovered ? 3 : 1.5} 
-                    strokeLinejoin="round"
-                    className={`transition-all duration-300 ease-out ${isHovered ? 'opacity-100 -translate-y-1 brightness-110' : 'opacity-90'}`}
-                    style={{ transformBox: 'fill-box', transformOrigin: 'center', filter: isHovered ? 'url(#dropShadow)' : 'none' }}
-                 />
-                 
-                 {/* Numéro d'arrondissement */}
-                 <text 
-                    x={arr.labelX} 
-                    y={arr.labelY} 
-                    textAnchor="middle" 
-                    dominantBaseline="middle" 
-                    fill={value > 0 && value > (maxValue/2) ? "white" : "#374151"} 
-                    fontSize="24" 
-                    fontWeight="bold" 
-                    className="pointer-events-none select-none transition-all font-sans"
-                    style={{ 
-                        transform: isHovered ? 'scale(1.2) translateY(-4px)' : 'scale(1)', 
-                        transformBox: 'fill-box', 
-                        transformOrigin: 'center',
-                        textShadow: '0px 1px 2px rgba(0,0,0,0.1)'
-                    }}
-                 >
-                    {arr.cp.slice(3)}
-                 </text>
-               </g>
-             );
-           })}
-        </svg>
-
-        {hoveredArr && (
-          <div className="absolute top-4 right-4 bg-slate-800/90 backdrop-blur text-white px-4 py-2 rounded-xl shadow-xl z-20 animate-fade-in pointer-events-none border border-slate-700">
-            <p className="font-bold text-sm">{hoveredArr.slice(3)}e Arrondissement</p>
-            <div className="flex items-center gap-2 mt-1">
-                <div className={`w-2 h-2 rounded-full ${data[hoveredArr] ? 'bg-orange-400' : 'bg-gray-400'}`}></div>
-                <p className="text-slate-200 text-xs">{data[hoveredArr] || 0} meubles sauvés</p>
+      <div className="relative w-full max-w-4xl">
+        {/* Tooltip Flottant */}
+        {hoveredDistrict && (
+            <div 
+                className="absolute z-50 bg-slate-800 text-white text-xs rounded-lg p-3 shadow-xl pointer-events-none transform -translate-x-1/2 -translate-y-full transition-all"
+                style={{ 
+                    left: PARIS_DISTRICTS.find(d => d.cp === hoveredDistrict)?.labelX, 
+                    top: (PARIS_DISTRICTS.find(d => d.cp === hoveredDistrict)?.labelY || 0) - 10
+                }}
+            >
+                <p className="font-bold text-sm mb-1">
+                    {parseInt(hoveredDistrict.slice(3))}ème Arrondissement
+                </p>
+                <div className="flex gap-3">
+                    <div className="text-green-400">
+                        <span className="font-bold block text-lg">{data[hoveredDistrict]?.saved || 0}</span>
+                        <span>Sauvés</span>
+                    </div>
+                    <div className="text-red-400 border-l border-slate-600 pl-3">
+                        <span className="font-bold block text-lg">{data[hoveredDistrict]?.lost || 0}</span>
+                        <span>Perdus</span>
+                    </div>
+                </div>
             </div>
-          </div>
         )}
+
+        <svg 
+            viewBox="-29.836 -17.13 1080 600" 
+            className="w-full h-auto drop-shadow-xl filter"
+            style={{ maxHeight: '600px' }}
+        >
+          <g>
+            {PARIS_DISTRICTS.map((district) => (
+              <polygon
+                key={district.cp}
+                points={district.points}
+                fill={getColor(district.cp)}
+                stroke="white"
+                strokeWidth="2"
+                className="transition-all duration-300 cursor-pointer hover:opacity-90 hover:stroke-[4px]"
+                onMouseEnter={() => setHoveredDistrict(district.cp)}
+                onMouseLeave={() => setHoveredDistrict(null)}
+              />
+            ))}
+          </g>
+          <g className="pointer-events-none">
+            {PARIS_DISTRICTS.map((district) => (
+              <text
+                key={`label-${district.cp}`}
+                x={district.labelX}
+                y={district.labelY}
+                textAnchor="middle"
+                dominantBaseline="middle"
+                className="fill-slate-800 font-bold text-sm md:text-base opacity-70"
+                style={{ pointerEvents: 'none' }}
+              >
+                {district.cp.slice(3)}
+              </text>
+            ))}
+          </g>
+        </svg>
       </div>
 
-      <div className="w-full flex justify-center items-center gap-3 mt-6 text-xs text-slate-500 font-medium">
+      {/* Légende */}
+      <div className="flex items-center gap-4 mt-6 text-sm text-slate-600">
         <span>Faible</span>
-        <div className="w-32 h-2 rounded-full bg-gradient-to-r from-yellow-300 via-orange-400 to-orange-600 shadow-inner"></div>
+        <div className="w-32 h-3 bg-gradient-to-r from-yellow-300 via-orange-400 to-orange-800 rounded-full"></div>
         <span>Élevé</span>
       </div>
     </div>

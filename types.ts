@@ -36,4 +36,5 @@ export interface StoredAnalysis {
   imageUrl: string;
   location: string;
   timestamp: any;
+  status: 'saved' | 'lost'; // Nouveau champ pour le vote
 }

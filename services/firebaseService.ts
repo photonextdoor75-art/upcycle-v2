@@ -1,3 +1,4 @@
+
 import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, addDoc, serverTimestamp, getDocs, query, orderBy, limit } from 'firebase/firestore';
 import { AnalysisResult, StoredAnalysis } from '../types';
@@ -59,10 +60,14 @@ export async function testConnection() {
 }
 
 /**
- * Sauvegarde uniquement les données d'analyse dans Firestore.
- * (Aucune image n'est stockée sur le serveur)
+ * Sauvegarde les données d'analyse dans Firestore avec le choix utilisateur.
  */
-export async function saveAnalysisToFirebase(file: File, result: AnalysisResult, location?: string | null): Promise<void> {
+export async function saveAnalysisToFirebase(
+    file: File, 
+    result: AnalysisResult, 
+    location: string | null,
+    status: 'saved' | 'lost'
+): Promise<void> {
   const db = getDB();
   if (!db) {
     console.warn("Firebase inaccessible, sauvegarde annulée.");
@@ -80,12 +85,13 @@ export async function saveAnalysisToFirebase(file: File, result: AnalysisResult,
       valueCreated: result.impact.valueCreated,
       imageUrl: "", 
       originalFileName: file.name,
-      location: location || "Non renseigné"
+      location: location || "Non renseigné",
+      status: status // 'saved' ou 'lost'
     };
 
     // Sauvegarde dans Firestore
     await addDoc(collection(db, "analyses"), statsData);
-    console.log("✅ Données statistiques sauvegardées.");
+    console.log(`✅ Données statistiques sauvegardées (Statut: ${status}).`);
 
   } catch (error) {
     console.error("❌ Erreur sauvegarde Firebase:", error);
@@ -101,7 +107,7 @@ export async function fetchAllAnalyses(): Promise<StoredAnalysis[]> {
 
   try {
     const analysesRef = collection(db, "analyses");
-    const q = query(analysesRef, orderBy("timestamp", "desc"), limit(100));
+    const q = query(analysesRef, orderBy("timestamp", "desc"), limit(200));
     const querySnapshot = await getDocs(q);
     
     const analyses: StoredAnalysis[] = [];
